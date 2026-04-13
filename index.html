@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,8 +26,9 @@
     .apiary-title { font-weight: 700; margin-bottom: 6px; font-size: 15px; }
     .custom-div-icon { background: transparent; border: none; }
     .marker-pin { width: 18px; height: 18px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+    select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 8px; background: white; }
     @media (max-width: 800px) {
-      .app { grid-template-columns: 1fr; grid-template-rows: 280px 1fr; }
+      .app { grid-template-columns: 1fr; grid-template-rows: 340px 1fr; }
       .sidebar { border-right: none; border-bottom: 1px solid #ddd; }
     }
   </style>
@@ -36,6 +38,17 @@
     <aside class="sidebar">
       <h1>Esperance Apiaries</h1>
       <p>Click a yard in the list to zoom to it and open its details.</p>
+
+      <div style="margin-bottom: 14px;">
+        <label for="foragePreset" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px;">Forage preset</label>
+        <select id="foragePreset">
+          <option value="1500">Close / conservative (1.5 km)</option>
+          <option value="2400" selected>Normal (2.4 km / 1.5 mi)</option>
+          <option value="3200">Strong flow (3.2 km / 2.0 mi)</option>
+          <option value="4800">Max range (4.8 km / 3.0 mi)</option>
+        </select>
+      </div>
+
       <div id="apiaryList" class="apiary-list"></div>
     </aside>
     <div id="map"></div>
@@ -70,6 +83,9 @@
     const markerMap = new Map();
     const cardMap = new Map();
     const listContainer = document.getElementById('apiaryList');
+    const foragePresetSelect = document.getElementById('foragePreset');
+    let currentForagePresetMeters = Number(foragePresetSelect.value);
+    let loadedApiaries = [];
 
     function getMarkerColor(apiary) {
       return apiary.markerColor || statusColors[apiary.status] || '#8e24aa';
@@ -99,6 +115,12 @@
       listContainer.innerHTML = '';
     }
 
+    function formatRadiusLabel(meters) {
+      const km = meters / 1000;
+      const miles = meters / 1609.34;
+      return `${km.toFixed(1)} km / ${miles.toFixed(1)} mi`;
+    }
+
     function renderApiaries(apiaries) {
       clearMapAndList();
 
@@ -108,7 +130,7 @@
         const color = getMarkerColor(apiary);
         const forageRadiusMeters = typeof apiary.forageRadiusMeters === 'number'
           ? apiary.forageRadiusMeters
-          : 2400;
+          : currentForagePresetMeters;
 
         const popupHtml = `
           <div>
@@ -116,7 +138,7 @@
             <div><strong>Owner:</strong> ${apiary.owner ?? 'Unknown'}</div>
             <div><strong>Hives:</strong> ${apiary.hives ?? 'N/A'}</div>
             <div><strong>Status:</strong> ${apiary.status ?? 'Unknown'}</div>
-            <div><strong>Forage radius:</strong> ${(forageRadiusMeters / 1000).toFixed(1)} km</div>
+            <div><strong>Forage radius:</strong> ${formatRadiusLabel(forageRadiusMeters)}</div>
             <div><strong>Notes:</strong> ${apiary.notes ?? 'None'}</div>
           </div>
         `;
@@ -152,7 +174,7 @@
           <div class="apiary-meta">
             <div><strong>Owner:</strong> ${apiary.owner ?? 'Unknown'}</div>
             <div><strong>Hives:</strong> ${apiary.hives ?? 'N/A'}</div>
-            <div><strong>Forage:</strong> ${(forageRadiusMeters / 1000).toFixed(1)} km</div>
+            <div><strong>Forage:</strong> ${formatRadiusLabel(forageRadiusMeters)}</div>
             <div>${apiary.notes ?? ''}</div>
           </div>
         `;
@@ -190,12 +212,18 @@
         if (!response.ok) throw new Error(`HTTP ${response.status} while loading apiaries.json`);
         const apiaries = await response.json();
         if (!Array.isArray(apiaries)) throw new Error('apiaries.json must contain a JSON array.');
-        renderApiaries(apiaries);
+        loadedApiaries = apiaries;
+        renderApiaries(loadedApiaries);
       } catch (error) {
         console.error('Failed to load apiaries.json:', error);
         showError('Check that apiaries.json is in the same folder as index.html and contains a valid JSON array.');
       }
     }
+
+    foragePresetSelect.addEventListener('change', () => {
+      currentForagePresetMeters = Number(foragePresetSelect.value);
+      renderApiaries(loadedApiaries);
+    });
 
     loadApiaries();
   </script>
