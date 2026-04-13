@@ -28,5 +28,125 @@
     "owner": "Demo Yard",
     "status": "planned",
     "notes": "Windbreak on west side."
+  },
+  {
+    "id": 4,
+    "name": "Schoharie Valley Apiary",
+    "lat": 42.6662,
+    "lng": -74.3124,
+    "hives": 10,
+    "owner": "MVBK Member A",
+    "status": "active",
+    "notes": "Open valley site with good clover nearby."
+  },
+  {
+    "id": 5,
+    "name": "Cobleskill Creek Yard",
+    "lat": 42.6818,
+    "lng": -74.4869,
+    "hives": 6,
+    "owner": "MVBK Member B",
+    "status": "active",
+    "notes": "Close to creek corridor and mixed hedgerows."
+  },
+  {
+    "id": 6,
+    "name": "Howes Cave Hillside",
+    "lat": 42.6954,
+    "lng": -74.3982,
+    "hives": 5,
+    "owner": "MVBK Member C",
+    "status": "planned",
+    "notes": "South-facing slope with early spring sun."
+  },
+  {
+    "id": 7,
+    "name": "Middleburgh Orchard Bees",
+    "lat": 42.5988,
+    "lng": -74.3341,
+    "hives": 14,
+    "owner": "MVBK Member D",
+    "status": "active",
+    "notes": "Adjacent to orchard pollination blocks."
+  },
+  {
+    "id": 8,
+    "name": "Sharon Springs North Yard",
+    "lat": 42.7831,
+    "lng": -74.6214,
+    "hives": 7,
+    "owner": "MVBK Member E",
+    "status": "needs attention",
+    "notes": "Good forage, but exposed to wind from the northwest."
+  },
+  {
+    "id": 9,
+    "name": "Central Bridge Apiary",
+    "lat": 42.7459,
+    "lng": -74.3387,
+    "hives": 9,
+    "owner": "MVBK Member F",
+    "status": "active",
+    "notes": "Near farm fields and roadside wildflowers."
+  },
+  {
+    "id": 10,
+    "name": "Richmondville Ridge Bees",
+    "lat": 42.6362,
+    "lng": -74.5688,
+    "hives": 11,
+    "owner": "MVBK Member G",
+    "status": "planned",
+    "notes": "Ridgetop site with excellent summer bloom."
+  },
+  {
+    "id": 11,
+    "name": "Jefferson Meadow Yard",
+    "lat": 42.4731,
+    "lng": -74.6064,
+    "hives": 4,
+    "owner": "MVBK Member H",
+    "status": "inactive",
+    "notes": "Former club site, currently resting."
+  },
+  {
+    "id": 12,
+    "name": "Summit Forest Edge",
+    "lat": 42.5598,
+    "lng": -74.4425,
+    "hives": 8,
+    "owner": "MVBK Member I",
+    "status": "active",
+    "notes": "Forest edge with goldenrod and aster flow nearby."
+  },
+  {
+    "id": 13,
+    "name": "Breakabeen Creekside",
+    "lat": 42.5249,
+    "lng": -74.4206,
+    "hives": 6,
+    "owner": "MVBK Member J",
+    "status": "active",
+    "notes": "Sheltered site with water close by."
+  },
+  {
+    "id": 14,
+    "name": "Fulton Hamlet Yard",
+    "lat": 42.5632,
+    "lng": -74.3355,
+    "hives": 5,
+    "owner": "MVBK Member K",
+    "status": "planned",
+    "notes": "New satellite yard for swarm capture response."
+  },
+  {
+    "id": 15,
+    "name": "Blenheim Valley Bees",
+    "lat": 42.4837,
+    "lng": -74.4503,
+    "hives": 13,
+    "owner": "MVBK Member L",
+    "status": "active",
+    "notes": "Broad valley forage and excellent late-summer bloom."
   }
 ]
