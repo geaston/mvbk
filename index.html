@@ -7,13 +7,16 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <style>
     html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
-    .app { display: grid; grid-template-columns: 320px 1fr; height: 100vh; width: 100%; }
+    .app { display: grid; grid-template-columns: 340px 1fr; height: 100vh; width: 100%; }
     .sidebar { border-right: 1px solid #ddd; background: #fafafa; overflow-y: auto; padding: 16px; box-sizing: border-box; }
     .sidebar h1 { font-size: 20px; margin: 0 0 8px; }
     .sidebar p { font-size: 14px; color: #555; margin: 0 0 16px; }
     .control-block { margin-bottom: 14px; }
     .control-label { display:block; font-size:13px; font-weight:700; margin-bottom:6px; }
     .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .legend { margin-top: 10px; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 10px; font-size: 12px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .legend-swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; border: 1px solid rgba(0,0,0,0.15); }
     .apiary-list { display: flex; flex-direction: column; gap: 10px; }
     .apiary-card { border: 1px solid #ddd; border-radius: 10px; background: white; padding: 12px; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
     .apiary-card:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.08); }
@@ -24,14 +27,16 @@
     .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
     .apiary-meta { font-size: 13px; color: #444; line-height: 1.45; }
     #map { height: 100%; width: 100%; }
-    .leaflet-popup-content { line-height: 1.4; min-width: 200px; }
+    .leaflet-popup-content { line-height: 1.4; min-width: 220px; }
     .apiary-title { font-weight: 700; margin-bottom: 6px; font-size: 15px; }
     .custom-div-icon { background: transparent; border: none; }
     .marker-pin { width: 18px; height: 18px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
     select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 8px; background: white; }
     input[type="checkbox"] { width: 16px; height: 16px; }
-    @media (max-width: 800px) {
-      .app { grid-template-columns: 1fr; grid-template-rows: 390px 1fr; }
+    .section-title { font-size: 13px; font-weight: 700; color: #333; margin: 18px 0 10px; }
+    .small-note { font-size: 12px; color: #666; margin-top: 6px; }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; grid-template-rows: 520px 1fr; }
       .sidebar { border-right: none; border-bottom: 1px solid #ddd; }
     }
   </style>
@@ -40,7 +45,7 @@
   <div class="app">
     <aside class="sidebar">
       <h1>MVBK Apiary Map</h1>
-      <p>Click a yard in the list to zoom to it and open its details.</p>
+      <p>Apiaries, forage rings, and a demo bloom-potential layer based on land-cover classes.</p>
 
       <div class="control-block">
         <label for="foragePreset" class="control-label">Forage preset</label>
@@ -59,6 +64,34 @@
         </label>
       </div>
 
+      <div class="section-title">Bloom layer</div>
+
+      <div class="control-block">
+        <label class="toggle-row">
+          <input type="checkbox" id="showBloomLayer" checked />
+          <span>Show bloom layer</span>
+        </label>
+      </div>
+
+      <div class="control-block">
+        <label for="seasonSelect" class="control-label">Bloom season</label>
+        <select id="seasonSelect">
+          <option value="spring">Spring</option>
+          <option value="summer" selected>Summer</option>
+          <option value="fall">Fall</option>
+          <option value="overall">Overall</option>
+        </select>
+        <div class="small-note">Scores are derived from land-cover class rules, not direct bloom observation.</div>
+      </div>
+
+      <div class="legend" id="bloomLegend">
+        <div class="legend-row"><span class="legend-swatch" style="background:#2e7d32;"></span> High bloom potential</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#f9a825;"></span> Medium bloom potential</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#9e9e9e;"></span> Low bloom potential</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#d32f2f;"></span> Poor bloom potential</div>
+      </div>
+
+      <div class="section-title">Apiaries</div>
       <div id="apiaryList" class="apiary-list"></div>
     </aside>
     <div id="map"></div>
@@ -66,8 +99,8 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script>
-    const esperanceCenter = [42.7637, -74.2551];
-    const map = L.map('map').setView(esperanceCenter, 12);
+    const esperanceCenter = [42.69, -74.40];
+    const map = L.map('map').setView(esperanceCenter, 11);
 
     const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
@@ -80,6 +113,31 @@
 
     satellite.addTo(map);
     L.control.layers({ "Street Map": streets, "Satellite": satellite }).addTo(map);
+
+    const bloomAreaData = {
+      "type": "FeatureCollection",
+      "features": [
+        {"type":"Feature","properties":{"name":"Esperance Brushy Field","landCoverClass":"shrub_scrub","notes":"Old field with brushy regrowth and edge habitat."},"geometry":{"type":"Polygon","coordinates":[[[-74.280,42.782],[-74.256,42.782],[-74.256,42.767],[-74.280,42.767],[-74.280,42.782]]]}},
+        {"type":"Feature","properties":{"name":"Central Bridge Hedgerow Block","landCoverClass":"pasture_hay","notes":"Open field margin and adjacent hay ground."},"geometry":{"type":"Polygon","coordinates":[[[-74.360,42.755],[-74.330,42.755],[-74.330,42.739],[-74.360,42.739],[-74.360,42.755]]]}},
+        {"type":"Feature","properties":{"name":"Schoharie Valley Cropland","landCoverClass":"cultivated_crops","notes":"Large agricultural block; bloom value depends on crop and margins."},"geometry":{"type":"Polygon","coordinates":[[[-74.340,42.681],[-74.290,42.681],[-74.290,42.648],[-74.340,42.648],[-74.340,42.681]]]}},
+        {"type":"Feature","properties":{"name":"Middleburgh Forest Edge","landCoverClass":"forest_edge","notes":"Woodland edge with openings and shrubby transition."},"geometry":{"type":"Polygon","coordinates":[[[-74.372,42.622],[-74.332,42.622],[-74.332,42.594],[-74.372,42.594],[-74.372,42.622]]]}},
+        {"type":"Feature","properties":{"name":"Breakabeen Wet Edge","landCoverClass":"wetland_edge","notes":"Wet edge habitat with spring pollen potential."},"geometry":{"type":"Polygon","coordinates":[[[-74.448,42.544],[-74.416,42.544],[-74.416,42.522],[-74.448,42.522],[-74.448,42.544]]]}},
+        {"type":"Feature","properties":{"name":"Cobleskill Orchard Margin","landCoverClass":"orchard_edge","notes":"Pollination-adjacent perennial edge habitat."},"geometry":{"type":"Polygon","coordinates":[[[-74.515,42.700],[-74.470,42.700],[-74.470,42.670],[-74.515,42.670],[-74.515,42.700]]]}},
+        {"type":"Feature","properties":{"name":"Jefferson Closed Forest","landCoverClass":"forest_interior","notes":"Dense interior woodland with limited understory bloom."},"geometry":{"type":"Polygon","coordinates":[[[-74.645,42.505],[-74.590,42.505],[-74.590,42.463],[-74.645,42.463],[-74.645,42.505]]]}},
+        {"type":"Feature","properties":{"name":"Richmondville Grassland","landCoverClass":"grassland_herbaceous","notes":"Open grass-herbaceous block with meadow potential."},"geometry":{"type":"Polygon","coordinates":[[[-74.595,42.664],[-74.546,42.664],[-74.546,42.628],[-74.595,42.628],[-74.595,42.664]]]}}
+      ]
+    };
+
+    const bloomScoringRules = {
+      shrub_scrub: { spring: 2, summer: 3, fall: 3, overall: 3, label: 'Shrub / scrub' },
+      pasture_hay: { spring: 2, summer: 2, fall: 2, overall: 2, label: 'Pasture / hay' },
+      cultivated_crops: { spring: 1, summer: 1, fall: 0, overall: 1, label: 'Cultivated crops' },
+      forest_edge: { spring: 3, summer: 2, fall: 2, overall: 2, label: 'Forest edge' },
+      wetland_edge: { spring: 3, summer: 2, fall: 1, overall: 2, label: 'Wetland edge' },
+      orchard_edge: { spring: 3, summer: 2, fall: 1, overall: 2, label: 'Orchard edge' },
+      forest_interior: { spring: 1, summer: 0, fall: 0, overall: 0, label: 'Forest interior' },
+      grassland_herbaceous: { spring: 1, summer: 2, fall: 3, overall: 2, label: 'Grassland / herbaceous' }
+    };
 
     const statusColors = {
       active: '#2e7d32',
@@ -95,10 +153,66 @@
     const listContainer = document.getElementById('apiaryList');
     const foragePresetSelect = document.getElementById('foragePreset');
     const showForageRingsCheckbox = document.getElementById('showForageRings');
+    const showBloomLayerCheckbox = document.getElementById('showBloomLayer');
+    const seasonSelect = document.getElementById('seasonSelect');
+    const bloomLegend = document.getElementById('bloomLegend');
 
     let currentForagePresetMeters = Number(foragePresetSelect.value);
     let showForageRings = showForageRingsCheckbox.checked;
+    let showBloomLayer = showBloomLayerCheckbox.checked;
+    let currentSeason = seasonSelect.value;
     let loadedApiaries = [];
+    let bloomLayer = null;
+
+    function scoreToColor(score) {
+      if (score >= 3) return '#2e7d32';
+      if (score >= 2) return '#f9a825';
+      if (score >= 1) return '#9e9e9e';
+      return '#d32f2f';
+    }
+
+    function scoreToLabel(score) {
+      if (score >= 3) return 'High';
+      if (score >= 2) return 'Medium';
+      if (score >= 1) return 'Low';
+      return 'Poor';
+    }
+
+    function getBloomProperties(feature) {
+      const landCoverClass = feature.properties.landCoverClass;
+      const rule = bloomScoringRules[landCoverClass] || { spring: 0, summer: 0, fall: 0, overall: 0, label: landCoverClass };
+      return { rule, score: rule[currentSeason] ?? rule.overall ?? 0 };
+    }
+
+    function renderBloomLayer() {
+      if (bloomLayer) map.removeLayer(bloomLayer);
+
+      bloomLayer = L.geoJSON(bloomAreaData, {
+        style: feature => {
+          const { score } = getBloomProperties(feature);
+          return { color: scoreToColor(score), weight: 1, fillColor: scoreToColor(score), fillOpacity: 0.28 };
+        },
+        onEachFeature: (feature, layer) => {
+          const { rule, score } = getBloomProperties(feature);
+          const seasonName = currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1);
+          layer.bindPopup(`
+            <div>
+              <div class="apiary-title">${feature.properties.name ?? 'Bloom area'}</div>
+              <div><strong>Land cover:</strong> ${rule.label}</div>
+              <div><strong>${seasonName} bloom potential:</strong> ${scoreToLabel(score)}</div>
+              <div><strong>Spring:</strong> ${scoreToLabel(rule.spring)}</div>
+              <div><strong>Summer:</strong> ${scoreToLabel(rule.summer)}</div>
+              <div><strong>Fall:</strong> ${scoreToLabel(rule.fall)}</div>
+              <div><strong>Overall:</strong> ${scoreToLabel(rule.overall)}</div>
+              <div><strong>Notes:</strong> ${feature.properties.notes ?? 'None'}</div>
+            </div>
+          `);
+        }
+      });
+
+      if (showBloomLayer) bloomLayer.addTo(map);
+      bloomLegend.style.display = showBloomLayer ? 'block' : 'none';
+    }
 
     function getMarkerColor(apiary) {
       return apiary.markerColor || statusColors[apiary.status] || '#8e24aa';
@@ -141,9 +255,7 @@
         if (typeof apiary.lat !== 'number' || typeof apiary.lng !== 'number') return;
 
         const color = getMarkerColor(apiary);
-        const forageRadiusMeters = typeof apiary.forageRadiusMeters === 'number'
-          ? apiary.forageRadiusMeters
-          : currentForagePresetMeters;
+        const forageRadiusMeters = typeof apiary.forageRadiusMeters === 'number' ? apiary.forageRadiusMeters : currentForagePresetMeters;
 
         const popupHtml = `
           <div>
@@ -164,15 +276,10 @@
           fillOpacity: 0.12
         });
 
-        if (showForageRings) {
-          forageCircle.addTo(map);
-        }
+        if (showForageRings) forageCircle.addTo(map);
         forageCircles.push(forageCircle);
 
-        const marker = L.marker([apiary.lat, apiary.lng], { icon: createDivIcon(color) })
-          .addTo(map)
-          .bindPopup(popupHtml);
-
+        const marker = L.marker([apiary.lat, apiary.lng], { icon: createDivIcon(color) }).addTo(map).bindPopup(popupHtml);
         marker.on('click', () => setActiveCard(apiary.id));
 
         markers.push(marker);
@@ -208,10 +315,14 @@
         cardMap.set(apiary.id, card);
       });
 
-      if (markers.length > 0) {
-        const layersForBounds = showForageRings ? [...markers, ...forageCircles] : [...markers];
-        const featureGroup = L.featureGroup(layersForBounds);
-        map.fitBounds(featureGroup.getBounds().pad(0.15));
+      const boundsLayers = [];
+      if (markers.length > 0) boundsLayers.push(...markers);
+      if (showForageRings && forageCircles.length > 0) boundsLayers.push(...forageCircles);
+      if (showBloomLayer && bloomLayer) boundsLayers.push(bloomLayer);
+
+      if (boundsLayers.length > 0) {
+        const featureGroup = L.featureGroup(boundsLayers);
+        map.fitBounds(featureGroup.getBounds().pad(0.1));
       }
     }
 
@@ -231,9 +342,11 @@
         const apiaries = await response.json();
         if (!Array.isArray(apiaries)) throw new Error('apiaries.json must contain a JSON array.');
         loadedApiaries = apiaries;
+        renderBloomLayer();
         renderApiaries(loadedApiaries);
       } catch (error) {
         console.error('Failed to load apiaries.json:', error);
+        renderBloomLayer();
         showError('Check that apiaries.json is in the same folder as index.html and contains a valid JSON array.');
       }
     }
@@ -245,6 +358,18 @@
 
     showForageRingsCheckbox.addEventListener('change', () => {
       showForageRings = showForageRingsCheckbox.checked;
+      renderApiaries(loadedApiaries);
+    });
+
+    showBloomLayerCheckbox.addEventListener('change', () => {
+      showBloomLayer = showBloomLayerCheckbox.checked;
+      renderBloomLayer();
+      renderApiaries(loadedApiaries);
+    });
+
+    seasonSelect.addEventListener('change', () => {
+      currentSeason = seasonSelect.value;
+      renderBloomLayer();
       renderApiaries(loadedApiaries);
     });
 
