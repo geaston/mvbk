@@ -4,149 +4,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Esperance Apiary Map</title>
-
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
-
-    .app {
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      height: 100vh;
-      width: 100%;
-    }
-
-    .sidebar {
-      border-right: 1px solid #ddd;
-      background: #fafafa;
-      overflow-y: auto;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-
-    .sidebar h1 {
-      font-size: 20px;
-      margin: 0 0 8px;
-    }
-
-    .sidebar p {
-      font-size: 14px;
-      color: #555;
-      margin: 0 0 16px;
-    }
-
-    .apiary-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .apiary-card {
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      background: white;
-      padding: 12px;
-      cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .apiary-card:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-    }
-
-    .apiary-card.active {
-      border-color: #333;
-      box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
-    }
-
-    .apiary-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-
-    .apiary-name {
-      font-weight: 700;
-      font-size: 15px;
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: #f2f2f2;
-      white-space: nowrap;
-    }
-
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    .apiary-meta {
-      font-size: 13px;
-      color: #444;
-      line-height: 1.45;
-    }
-
-    #map {
-      height: 100%;
-      width: 100%;
-    }
-
-    .leaflet-popup-content {
-      line-height: 1.4;
-      min-width: 200px;
-    }
-
-    .apiary-title {
-      font-weight: 700;
-      margin-bottom: 6px;
-      font-size: 15px;
-    }
-
-    .custom-div-icon {
-      background: transparent;
-      border: none;
-    }
-
-    .marker-pin {
-      width: 18px;
-      height: 18px;
-      border-radius: 50% 50% 50% 0;
-      transform: rotate(-45deg);
-      border: 2px solid white;
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.25);
-    }
-
+    html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
+    .app { display: grid; grid-template-columns: 320px 1fr; height: 100vh; width: 100%; }
+    .sidebar { border-right: 1px solid #ddd; background: #fafafa; overflow-y: auto; padding: 16px; box-sizing: border-box; }
+    .sidebar h1 { font-size: 20px; margin: 0 0 8px; }
+    .sidebar p { font-size: 14px; color: #555; margin: 0 0 16px; }
+    .apiary-list { display: flex; flex-direction: column; gap: 10px; }
+    .apiary-card { border: 1px solid #ddd; border-radius: 10px; background: white; padding: 12px; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+    .apiary-card:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.08); }
+    .apiary-card.active { border-color: #333; box-shadow: 0 0 0 2px rgba(0,0,0,.08); }
+    .apiary-card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .apiary-name { font-weight: 700; font-size: 15px; }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 8px; border-radius: 999px; background: #f2f2f2; white-space: nowrap; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .apiary-meta { font-size: 13px; color: #444; line-height: 1.45; }
+    #map { height: 100%; width: 100%; }
+    .leaflet-popup-content { line-height: 1.4; min-width: 200px; }
+    .apiary-title { font-weight: 700; margin-bottom: 6px; font-size: 15px; }
+    .custom-div-icon { background: transparent; border: none; }
+    .marker-pin { width: 18px; height: 18px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
     @media (max-width: 800px) {
-      .app {
-        grid-template-columns: 1fr;
-        grid-template-rows: 280px 1fr;
-      }
-
-      .sidebar {
-        border-right: none;
-        border-bottom: 1px solid #ddd;
-      }
+      .app { grid-template-columns: 1fr; grid-template-rows: 280px 1fr; }
+      .sidebar { border-right: none; border-bottom: 1px solid #ddd; }
     }
   </style>
 </head>
@@ -160,41 +41,22 @@
     <div id="map"></div>
   </div>
 
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script>
     const esperanceCenter = [42.7637, -74.2551];
-
     const map = L.map('map').setView(esperanceCenter, 12);
 
-    // Base layers
     const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
+      maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
     });
-    
+
     const satellite = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      {
-        maxZoom: 19,
-        attribution: 'Tiles &copy; Esri'
-      }
+      { maxZoom: 19, attribution: 'Tiles &copy; Esri' }
     );
-    
-    // Add default layer
+
     streets.addTo(map);
-    
-    // Layer control (top right toggle)
-    L.control.layers(
-      {
-        "Street Map": streets,
-        "Satellite": satellite
-      }
-    ).addTo(map);
+    L.control.layers({ "Street Map": streets, "Satellite": satellite }).addTo(map);
 
     const statusColors = {
       active: '#2e7d32',
@@ -204,6 +66,7 @@
     };
 
     const markers = [];
+    const forageCircles = [];
     const markerMap = new Map();
     const cardMap = new Map();
     const listContainer = document.getElementById('apiaryList');
@@ -223,14 +86,14 @@
     }
 
     function setActiveCard(apiaryId) {
-      cardMap.forEach((card, id) => {
-        card.classList.toggle('active', id === apiaryId);
-      });
+      cardMap.forEach((card, id) => card.classList.toggle('active', id === apiaryId));
     }
 
     function clearMapAndList() {
       markers.forEach(marker => map.removeLayer(marker));
+      forageCircles.forEach(circle => map.removeLayer(circle));
       markers.length = 0;
+      forageCircles.length = 0;
       markerMap.clear();
       cardMap.clear();
       listContainer.innerHTML = '';
@@ -240,12 +103,12 @@
       clearMapAndList();
 
       apiaries.forEach(apiary => {
-        if (typeof apiary.lat !== 'number' || typeof apiary.lng !== 'number') {
-          console.warn('Skipping apiary with invalid coordinates:', apiary);
-          return;
-        }
+        if (typeof apiary.lat !== 'number' || typeof apiary.lng !== 'number') return;
 
         const color = getMarkerColor(apiary);
+        const forageRadiusMeters = typeof apiary.forageRadiusMeters === 'number'
+          ? apiary.forageRadiusMeters
+          : 2400;
 
         const popupHtml = `
           <div>
@@ -253,13 +116,21 @@
             <div><strong>Owner:</strong> ${apiary.owner ?? 'Unknown'}</div>
             <div><strong>Hives:</strong> ${apiary.hives ?? 'N/A'}</div>
             <div><strong>Status:</strong> ${apiary.status ?? 'Unknown'}</div>
+            <div><strong>Forage radius:</strong> ${(forageRadiusMeters / 1000).toFixed(1)} km</div>
             <div><strong>Notes:</strong> ${apiary.notes ?? 'None'}</div>
           </div>
         `;
 
-        const marker = L.marker([apiary.lat, apiary.lng], {
-          icon: createDivIcon(color)
-        })
+        const forageCircle = L.circle([apiary.lat, apiary.lng], {
+          radius: forageRadiusMeters,
+          color: color,
+          weight: 1,
+          fillColor: color,
+          fillOpacity: 0.12
+        }).addTo(map);
+        forageCircles.push(forageCircle);
+
+        const marker = L.marker([apiary.lat, apiary.lng], { icon: createDivIcon(color) })
           .addTo(map)
           .bindPopup(popupHtml);
 
@@ -281,6 +152,7 @@
           <div class="apiary-meta">
             <div><strong>Owner:</strong> ${apiary.owner ?? 'Unknown'}</div>
             <div><strong>Hives:</strong> ${apiary.hives ?? 'N/A'}</div>
+            <div><strong>Forage:</strong> ${(forageRadiusMeters / 1000).toFixed(1)} km</div>
             <div>${apiary.notes ?? ''}</div>
           </div>
         `;
@@ -288,7 +160,6 @@
         card.addEventListener('click', () => {
           const selectedMarker = markerMap.get(apiary.id);
           if (!selectedMarker) return;
-
           map.setView([apiary.lat, apiary.lng], 14, { animate: true });
           selectedMarker.openPopup();
           setActiveCard(apiary.id);
@@ -299,8 +170,8 @@
       });
 
       if (markers.length > 0) {
-        const featureGroup = L.featureGroup(markers);
-        map.fitBounds(featureGroup.getBounds().pad(0.2));
+        const featureGroup = L.featureGroup([...markers, ...forageCircles]);
+        map.fitBounds(featureGroup.getBounds().pad(0.15));
       }
     }
 
@@ -316,15 +187,9 @@
     async function loadApiaries() {
       try {
         const response = await fetch('./apiaries.json');
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status} while loading apiaries.json`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP ${response.status} while loading apiaries.json`);
         const apiaries = await response.json();
-        if (!Array.isArray(apiaries)) {
-          throw new Error('apiaries.json must contain a JSON array.');
-        }
-
+        if (!Array.isArray(apiaries)) throw new Error('apiaries.json must contain a JSON array.');
         renderApiaries(apiaries);
       } catch (error) {
         console.error('Failed to load apiaries.json:', error);
