@@ -176,6 +176,16 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
+    const labels = L.tileLayer(
+      'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',
+      {
+        attribution: '&copy; CartoDB'
+      }
+    );
+
+    // Add labels on top of satellite
+    labels.addTo(map);
+
     const statusColors = {
       active: '#2e7d32',
       planned: '#1565c0',
