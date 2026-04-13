@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Esperance Apiary Map</title>
+  <title>MVBK Apiary Map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <style>
     html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
@@ -12,6 +11,9 @@
     .sidebar { border-right: 1px solid #ddd; background: #fafafa; overflow-y: auto; padding: 16px; box-sizing: border-box; }
     .sidebar h1 { font-size: 20px; margin: 0 0 8px; }
     .sidebar p { font-size: 14px; color: #555; margin: 0 0 16px; }
+    .control-block { margin-bottom: 14px; }
+    .control-label { display:block; font-size:13px; font-weight:700; margin-bottom:6px; }
+    .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
     .apiary-list { display: flex; flex-direction: column; gap: 10px; }
     .apiary-card { border: 1px solid #ddd; border-radius: 10px; background: white; padding: 12px; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
     .apiary-card:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.08); }
@@ -27,8 +29,9 @@
     .custom-div-icon { background: transparent; border: none; }
     .marker-pin { width: 18px; height: 18px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
     select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 8px; background: white; }
+    input[type="checkbox"] { width: 16px; height: 16px; }
     @media (max-width: 800px) {
-      .app { grid-template-columns: 1fr; grid-template-rows: 340px 1fr; }
+      .app { grid-template-columns: 1fr; grid-template-rows: 390px 1fr; }
       .sidebar { border-right: none; border-bottom: 1px solid #ddd; }
     }
   </style>
@@ -36,17 +39,24 @@
 <body>
   <div class="app">
     <aside class="sidebar">
-      <h1>Esperance Apiaries</h1>
+      <h1>MVBK Apiary Map</h1>
       <p>Click a yard in the list to zoom to it and open its details.</p>
 
-      <div style="margin-bottom: 14px;">
-        <label for="foragePreset" style="display:block; font-size:13px; font-weight:700; margin-bottom:6px;">Forage preset</label>
+      <div class="control-block">
+        <label for="foragePreset" class="control-label">Forage preset</label>
         <select id="foragePreset">
           <option value="1500">Close / conservative (1.5 km)</option>
           <option value="2400" selected>Normal (2.4 km / 1.5 mi)</option>
           <option value="3200">Strong flow (3.2 km / 2.0 mi)</option>
           <option value="4800">Max range (4.8 km / 3.0 mi)</option>
         </select>
+      </div>
+
+      <div class="control-block">
+        <label class="toggle-row">
+          <input type="checkbox" id="showForageRings" checked />
+          <span>Show forage rings</span>
+        </label>
       </div>
 
       <div id="apiaryList" class="apiary-list"></div>
@@ -68,7 +78,7 @@
       { maxZoom: 19, attribution: 'Tiles &copy; Esri' }
     );
 
-    streets.addTo(map);
+    satellite.addTo(map);
     L.control.layers({ "Street Map": streets, "Satellite": satellite }).addTo(map);
 
     const statusColors = {
@@ -84,7 +94,10 @@
     const cardMap = new Map();
     const listContainer = document.getElementById('apiaryList');
     const foragePresetSelect = document.getElementById('foragePreset');
+    const showForageRingsCheckbox = document.getElementById('showForageRings');
+
     let currentForagePresetMeters = Number(foragePresetSelect.value);
+    let showForageRings = showForageRingsCheckbox.checked;
     let loadedApiaries = [];
 
     function getMarkerColor(apiary) {
@@ -149,7 +162,11 @@
           weight: 1,
           fillColor: color,
           fillOpacity: 0.12
-        }).addTo(map);
+        });
+
+        if (showForageRings) {
+          forageCircle.addTo(map);
+        }
         forageCircles.push(forageCircle);
 
         const marker = L.marker([apiary.lat, apiary.lng], { icon: createDivIcon(color) })
@@ -192,7 +209,8 @@
       });
 
       if (markers.length > 0) {
-        const featureGroup = L.featureGroup([...markers, ...forageCircles]);
+        const layersForBounds = showForageRings ? [...markers, ...forageCircles] : [...markers];
+        const featureGroup = L.featureGroup(layersForBounds);
         map.fitBounds(featureGroup.getBounds().pad(0.15));
       }
     }
@@ -222,6 +240,11 @@
 
     foragePresetSelect.addEventListener('change', () => {
       currentForagePresetMeters = Number(foragePresetSelect.value);
+      renderApiaries(loadedApiaries);
+    });
+
+    showForageRingsCheckbox.addEventListener('change', () => {
+      showForageRings = showForageRingsCheckbox.checked;
       renderApiaries(loadedApiaries);
     });
 
