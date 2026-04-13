@@ -171,20 +171,30 @@
 
     const map = L.map('map').setView(esperanceCenter, 12);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Base layers
+    const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    const labels = L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',
+    });
+    
+    const satellite = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       {
-        attribution: '&copy; CartoDB'
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri'
       }
     );
-
-    // Add labels on top of satellite
-    labels.addTo(map);
+    
+    // Add default layer
+    streets.addTo(map);
+    
+    // Layer control (top right toggle)
+    L.control.layers(
+      {
+        "Street Map": streets,
+        "Satellite": satellite
+      }
+    ).addTo(map);
 
     const statusColors = {
       active: '#2e7d32',
