@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "East Hill Apiary",
+    "lat": 42.7675,
+    "lng": -74.2472,
+    "hives": 8,
+    "owner": "Glenn",
+    "status": "active",
+    "notes": "Good morning sun, partial afternoon shade."
+  },
+  {
+    "id": 2,
+    "name": "Creekside Yard",
+    "lat": 42.7548,
+    "lng": -74.2724,
+    "hives": 4,
+    "owner": "Club Member",
+    "status": "needs attention",
+    "notes": "Near forage corridor and stream edge."
+  },
+  {
+    "id": 3,
+    "name": "South Ridge Bees",
+    "lat": 42.7809,
+    "lng": -74.2308,
+    "hives": 12,
+    "owner": "Demo Yard",
+    "status": "planned",
+    "notes": "Windbreak on west side."
+  }
+]

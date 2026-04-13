@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Esperance Apiary Map</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      height: 100vh;
+      width: 100%;
+    }
+
+    .sidebar {
+      border-right: 1px solid #ddd;
+      background: #fafafa;
+      overflow-y: auto;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .sidebar h1 {
+      font-size: 20px;
+      margin: 0 0 8px;
+    }
+
+    .sidebar p {
+      font-size: 14px;
+      color: #555;
+      margin: 0 0 16px;
+    }
+
+    .apiary-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .apiary-card {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: white;
+      padding: 12px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .apiary-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+
+    .apiary-card.active {
+      border-color: #333;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+    }
+
+    .apiary-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .apiary-name {
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #f2f2f2;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .apiary-meta {
+      font-size: 13px;
+      color: #444;
+      line-height: 1.45;
+    }
+
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+
+    .leaflet-popup-content {
+      line-height: 1.4;
+      min-width: 200px;
+    }
+
+    .apiary-title {
+      font-weight: 700;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .custom-div-icon {
+      background: transparent;
+      border: none;
+    }
+
+    .marker-pin {
+      width: 18px;
+      height: 18px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      border: 2px solid white;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.25);
+    }
+
+    @media (max-width: 800px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: 280px 1fr;
+      }
+
+      .sidebar {
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h1>Esperance Apiaries</h1>
+      <p>Click a yard in the list to zoom to it and open its details.</p>
+      <div id="apiaryList" class="apiary-list"></div>
+    </aside>
+    <div id="map"></div>
+  </div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script>
+    const esperanceCenter = [42.7637, -74.2551];
+
+    const map = L.map('map').setView(esperanceCenter, 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const statusColors = {
+      active: '#2e7d32',
+      planned: '#1565c0',
+      'needs attention': '#ef6c00',
+      inactive: '#757575'
+    };
+
+    const markers = [];
+    const markerMap = new Map();
+    const cardMap = new Map();
+    const listContainer = document.getElementById('apiaryList');
+
+    function getMarkerColor(apiary) {
+      return apiary.markerColor || statusColors[apiary.status] || '#8e24aa';
+    }
+
+    function createDivIcon(color) {
+      return L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div class="marker-pin" style="background:${color}"></div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 18],
+        popupAnchor: [0, -18]
+      });
+    }
+
+    function setActiveCard(apiaryId) {
+      cardMap.forEach((card, id) => {
+        card.classList.toggle('active', id === apiaryId);
+      });
+    }
+
+    function clearMapAndList() {
+      markers.forEach(marker => map.removeLayer(marker));
+      markers.length = 0;
+      markerMap.clear();
+      cardMap.clear();
+      listContainer.innerHTML = '';
+    }
+
+    function renderApiaries(apiaries) {
+      clearMapAndList();
+
+      apiaries.forEach(apiary => {
+        if (typeof apiary.lat !== 'number' || typeof apiary.lng !== 'number') {
+          console.warn('Skipping apiary with invalid coordinates:', apiary);
+          return;
+        }
+
+        const color = getMarkerColor(apiary);
+
+        const popupHtml = `
+          <div>
+            <div class="apiary-title">${apiary.name ?? 'Unnamed Apiary'}</div>
+            <div><strong>Owner:</strong> ${apiary.owner ?? 'Unknown'}</div>
+            <div><strong>Hives:</strong> ${apiary.hives ?? 'N/A'}</div>
+            <div><strong>Status:</strong> ${apiary.status ?? 'Unknown'}</div>
+            <div><strong>Notes:</strong> ${apiary.notes ?? 'None'}</div>
+          </div>
+        `;
+
+        const marker = L.marker([apiary.lat, apiary.lng], {
+          icon: createDivIcon(color)
+        })
+          .addTo(map)
+          .bindPopup(popupHtml);
+
+        marker.on('click', () => setActiveCard(apiary.id));
+
+        markers.push(marker);
+        markerMap.set(apiary.id, marker);
+
+        const card = document.createElement('div');
+        card.className = 'apiary-card';
+        card.innerHTML = `
+          <div class="apiary-card-header">
+            <div class="apiary-name">${apiary.name ?? 'Unnamed Apiary'}</div>
+            <div class="status-pill">
+              <span class="dot" style="background:${color}"></span>
+              <span>${apiary.status ?? 'Unknown'}</span>
+            </div>
+          </div>
+          <div class="apiary-meta">
+            <div><strong>Owner:</strong> ${apiary.owner ?? 'Unknown'}</div>
+            <div><strong>Hives:</strong> ${apiary.hives ?? 'N/A'}</div>
+            <div>${apiary.notes ?? ''}</div>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          const selectedMarker = markerMap.get(apiary.id);
+          if (!selectedMarker) return;
+
+          map.setView([apiary.lat, apiary.lng], 14, { animate: true });
+          selectedMarker.openPopup();
+          setActiveCard(apiary.id);
+        });
+
+        listContainer.appendChild(card);
+        cardMap.set(apiary.id, card);
+      });
+
+      if (markers.length > 0) {
+        const featureGroup = L.featureGroup(markers);
+        map.fitBounds(featureGroup.getBounds().pad(0.2));
+      }
+    }
+
+    function showError(message) {
+      listContainer.innerHTML = `
+        <div class="apiary-card">
+          <div class="apiary-name">Unable to load apiaries</div>
+          <div class="apiary-meta" style="margin-top: 8px;">${message}</div>
+        </div>
+      `;
+    }
+
+    async function loadApiaries() {
+      try {
+        const response = await fetch('./apiaries.json');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} while loading apiaries.json`);
+        }
+
+        const apiaries = await response.json();
+        if (!Array.isArray(apiaries)) {
+          throw new Error('apiaries.json must contain a JSON array.');
+        }
+
+        renderApiaries(apiaries);
+      } catch (error) {
+        console.error('Failed to load apiaries.json:', error);
+        showError('Check that apiaries.json is in the same folder as index.html and contains a valid JSON array.');
+      }
+    }
+
+    loadApiaries();
+  </script>
+</body>
+</html>
