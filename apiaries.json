@@ -1,147 +1,147 @@
 [
   {
     "id": 1,
-    "name": "East Hill Apiary",
+    "name": "East Hill Production Yard",
     "lat": 42.7675,
     "lng": -74.2472,
-    "hives": 8,
+    "hives": 12,
     "owner": "Glenn",
     "status": "active",
     "type": "honey yard",
     "miteCount": 2,
     "nysInspected": true,
     "treated": true,
-    "notes": "Good morning sun, partial afternoon shade."
+    "notes": "Primary honey production yard. Strong clover flow."
   },
   {
     "id": 2,
-    "name": "Creekside Yard",
+    "name": "Creekside Nuc Yard",
     "lat": 42.7548,
     "lng": -74.2724,
-    "hives": 4,
+    "hives": 6,
     "owner": "Club Member",
-    "status": "needs attention",
+    "status": "active",
     "type": "nuc yard",
-    "miteCount": 5,
+    "miteCount": 4,
     "nysInspected": false,
-    "treated": false,
-    "notes": "Near forage corridor and stream edge."
+    "treated": true,
+    "notes": "Used for splits and overwintered nucs."
   },
   {
     "id": 3,
-    "name": "South Ridge Bees",
+    "name": "South Ridge Honey Yard",
     "lat": 42.7809,
     "lng": -74.2308,
-    "hives": 12,
+    "hives": 15,
     "owner": "Demo Yard",
     "status": "planned",
     "type": "honey yard",
     "miteCount": 1,
-    "nysInspected": true,
+    "nysInspected": false,
     "treated": false,
-    "notes": "Windbreak on west side."
+    "notes": "New expansion yard for 2027."
   },
   {
     "id": 4,
-    "name": "Schoharie Valley Apiary",
+    "name": "Schoharie Valley Honey Yard",
     "lat": 42.6662,
     "lng": -74.3124,
-    "hives": 10,
+    "hives": 18,
     "owner": "MVBK Member A",
     "status": "active",
     "type": "honey yard",
-    "miteCount": 2,
+    "miteCount": 3,
     "nysInspected": true,
     "treated": true,
-    "notes": "Open valley site with good clover nearby."
+    "notes": "High honey yield location."
   },
   {
     "id": 5,
-    "name": "Cobleskill Creek Yard",
+    "name": "Cobleskill Nuc Yard",
     "lat": 42.6818,
     "lng": -74.4869,
-    "hives": 6,
+    "hives": 8,
     "owner": "MVBK Member B",
     "status": "active",
     "type": "nuc yard",
-    "miteCount": 3,
+    "miteCount": 5,
     "nysInspected": false,
     "treated": true,
-    "notes": "Close to creek corridor and mixed hedgerows."
+    "notes": "Rotating nuc production yard."
   },
   {
     "id": 6,
-    "name": "Howes Cave Hillside",
+    "name": "Howes Cave Mating Yard",
     "lat": 42.6954,
     "lng": -74.3982,
     "hives": 5,
     "owner": "MVBK Member C",
-    "status": "planned",
+    "status": "active",
     "type": "queen mating",
     "miteCount": 1,
     "nysInspected": false,
     "treated": false,
-    "notes": "South-facing slope with early spring sun."
+    "notes": "Isolated site for queen mating."
   },
   {
     "id": 7,
-    "name": "Middleburgh Orchard Bees",
+    "name": "Middleburgh Orchard Yard",
     "lat": 42.5988,
     "lng": -74.3341,
-    "hives": 14,
+    "hives": 20,
     "owner": "MVBK Member D",
     "status": "active",
     "type": "honey yard",
     "miteCount": 4,
     "nysInspected": true,
     "treated": true,
-    "notes": "Adjacent to orchard pollination blocks."
+    "notes": "Pollination + honey production."
   },
   {
     "id": 8,
-    "name": "Sharon Springs North Yard",
+    "name": "Sharon Springs Drone Flood Yard",
     "lat": 42.7831,
     "lng": -74.6214,
-    "hives": 7,
+    "hives": 10,
     "owner": "MVBK Member E",
     "status": "needs attention",
     "type": "drone flood",
-    "miteCount": 6,
+    "miteCount": 7,
     "nysInspected": false,
-    "treated": true,
-    "notes": "Good forage, but exposed to wind from the northwest."
+    "treated": false,
+    "notes": "High drone population, mites elevated."
   },
   {
     "id": 9,
-    "name": "Central Bridge Apiary",
+    "name": "Central Bridge Honey Yard",
     "lat": 42.7459,
     "lng": -74.3387,
-    "hives": 9,
+    "hives": 14,
     "owner": "MVBK Member F",
     "status": "active",
     "type": "honey yard",
     "miteCount": 2,
     "nysInspected": true,
     "treated": false,
-    "notes": "Near farm fields and roadside wildflowers."
+    "notes": "Strong roadside forage."
   },
   {
     "id": 10,
-    "name": "Richmondville Ridge Bees",
+    "name": "Richmondville Drone Yard",
     "lat": 42.6362,
     "lng": -74.5688,
-    "hives": 11,
+    "hives": 9,
     "owner": "MVBK Member G",
     "status": "planned",
     "type": "drone flood",
     "miteCount": 3,
     "nysInspected": false,
     "treated": true,
-    "notes": "Ridgetop site with excellent summer bloom."
+    "notes": "Planned drone saturation yard."
   },
   {
     "id": 11,
-    "name": "Jefferson Meadow Yard",
+    "name": "Jefferson Mating Yard",
     "lat": 42.4731,
     "lng": -74.6064,
     "hives": 4,
@@ -151,25 +151,25 @@
     "miteCount": 0,
     "nysInspected": true,
     "treated": false,
-    "notes": "Former club site, currently resting."
+    "notes": "Resting yard, previously used for mating."
   },
   {
     "id": 12,
-    "name": "Summit Forest Edge",
+    "name": "Summit Nuc Yard",
     "lat": 42.5598,
     "lng": -74.4425,
-    "hives": 8,
+    "hives": 7,
     "owner": "MVBK Member I",
     "status": "active",
     "type": "nuc yard",
     "miteCount": 2,
     "nysInspected": true,
     "treated": true,
-    "notes": "Forest edge with goldenrod and aster flow nearby."
+    "notes": "Fall nuc overwintering success."
   },
   {
     "id": 13,
-    "name": "Breakabeen Creekside",
+    "name": "Breakabeen Mating Yard",
     "lat": 42.5249,
     "lng": -74.4206,
     "hives": 6,
@@ -179,11 +179,11 @@
     "miteCount": 1,
     "nysInspected": false,
     "treated": false,
-    "notes": "Sheltered site with water close by."
+    "notes": "Sheltered mating yard near creek."
   },
   {
     "id": 14,
-    "name": "Fulton Hamlet Yard",
+    "name": "Fulton Nuc Yard",
     "lat": 42.5632,
     "lng": -74.3355,
     "hives": 5,
@@ -193,20 +193,20 @@
     "miteCount": 4,
     "nysInspected": false,
     "treated": true,
-    "notes": "New satellite yard for swarm capture response."
+    "notes": "Swarm capture + split yard."
   },
   {
     "id": 15,
-    "name": "Blenheim Valley Bees",
+    "name": "Blenheim Honey Yard",
     "lat": 42.4837,
     "lng": -74.4503,
-    "hives": 13,
+    "hives": 16,
     "owner": "MVBK Member L",
     "status": "active",
     "type": "honey yard",
-    "miteCount": 2,
+    "miteCount": 3,
     "nysInspected": true,
     "treated": true,
-    "notes": "Broad valley forage and excellent late-summer bloom."
+    "notes": "Excellent late season goldenrod flow."
   }
 ]
