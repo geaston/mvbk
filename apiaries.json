@@ -11,7 +11,8 @@
     "miteCount": 2,
     "nysInspected": true,
     "treated": true,
-    "notes": "Primary honey production yard. Strong clover flow."
+    "miteBiter": true,
+    "notes": "Top producer and showing mite-biter traits."
   },
   {
     "id": 2,
@@ -25,7 +26,8 @@
     "miteCount": 4,
     "nysInspected": false,
     "treated": true,
-    "notes": "Used for splits and overwintered nucs."
+    "miteBiter": false,
+    "notes": "Standard nuc production yard."
   },
   {
     "id": 3,
@@ -39,7 +41,8 @@
     "miteCount": 1,
     "nysInspected": false,
     "treated": false,
-    "notes": "New expansion yard for 2027."
+    "miteBiter": true,
+    "notes": "Untreated survivor line expansion."
   },
   {
     "id": 4,
@@ -53,7 +56,8 @@
     "miteCount": 3,
     "nysInspected": true,
     "treated": true,
-    "notes": "High honey yield location."
+    "miteBiter": false,
+    "notes": "High production, conventional management."
   },
   {
     "id": 5,
@@ -67,7 +71,8 @@
     "miteCount": 5,
     "nysInspected": false,
     "treated": true,
-    "notes": "Rotating nuc production yard."
+    "miteBiter": false,
+    "notes": "Higher mite pressure, requires management."
   },
   {
     "id": 6,
@@ -81,7 +86,8 @@
     "miteCount": 1,
     "nysInspected": false,
     "treated": false,
-    "notes": "Isolated site for queen mating."
+    "miteBiter": true,
+    "notes": "Selected breeder queens with mite-biter genetics."
   },
   {
     "id": 7,
@@ -95,6 +101,7 @@
     "miteCount": 4,
     "nysInspected": true,
     "treated": true,
+    "miteBiter": false,
     "notes": "Pollination + honey production."
   },
   {
@@ -106,10 +113,11 @@
     "owner": "MVBK Member E",
     "status": "needs attention",
     "type": "drone flood",
-    "miteCount": 7,
+    "miteCount": 3,
     "nysInspected": false,
     "treated": false,
-    "notes": "High drone population, mites elevated."
+    "miteBiter": true,
+    "notes": "Drone source for mite-resistant genetics."
   },
   {
     "id": 9,
@@ -123,7 +131,8 @@
     "miteCount": 2,
     "nysInspected": true,
     "treated": false,
-    "notes": "Strong roadside forage."
+    "miteBiter": true,
+    "notes": "Strong untreated colony performance."
   },
   {
     "id": 10,
@@ -134,10 +143,11 @@
     "owner": "MVBK Member G",
     "status": "planned",
     "type": "drone flood",
-    "miteCount": 3,
+    "miteCount": 2,
     "nysInspected": false,
-    "treated": true,
-    "notes": "Planned drone saturation yard."
+    "treated": false,
+    "miteBiter": true,
+    "notes": "Planned drone saturation yard for genetics."
   },
   {
     "id": 11,
@@ -151,7 +161,8 @@
     "miteCount": 0,
     "nysInspected": true,
     "treated": false,
-    "notes": "Resting yard, previously used for mating."
+    "miteBiter": true,
+    "notes": "Resting breeder yard."
   },
   {
     "id": 12,
@@ -162,10 +173,11 @@
     "owner": "MVBK Member I",
     "status": "active",
     "type": "nuc yard",
-    "miteCount": 2,
+    "miteCount": 3,
     "nysInspected": true,
     "treated": true,
-    "notes": "Fall nuc overwintering success."
+    "miteBiter": false,
+    "notes": "Reliable nuc production yard."
   },
   {
     "id": 13,
@@ -179,7 +191,8 @@
     "miteCount": 1,
     "nysInspected": false,
     "treated": false,
-    "notes": "Sheltered mating yard near creek."
+    "miteBiter": true,
+    "notes": "Sheltered mating yard with selected lines."
   },
   {
     "id": 14,
@@ -193,7 +206,8 @@
     "miteCount": 4,
     "nysInspected": false,
     "treated": true,
-    "notes": "Swarm capture + split yard."
+    "miteBiter": false,
+    "notes": "Swarm capture + splits."
   },
   {
     "id": 15,
@@ -204,9 +218,10 @@
     "owner": "MVBK Member L",
     "status": "active",
     "type": "honey yard",
-    "miteCount": 3,
+    "miteCount": 2,
     "nysInspected": true,
     "treated": true,
-    "notes": "Excellent late season goldenrod flow."
+    "miteBiter": true,
+    "notes": "Excellent late flow and strong genetics."
   }
 ]
