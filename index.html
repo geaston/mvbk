@@ -688,8 +688,10 @@
             '<div><strong>Status:</strong> ' + (apiary.status || 'Unknown') + '</div>' +
             '<div><strong>Type:</strong> ' + (apiary.type || 'Unknown') + '</div>' +
             '<div><strong>Mite count:</strong> ' + (apiary.miteCount ?? 'N/A') + '</div>' +
+            '<div><strong>Mite-biter:</strong> ' + (apiary.miteBiter === true ? 'Yes 🧬' : (apiary.miteBiter === false ? 'No' : 'N/A')) + '</div>' +
             '<div><strong>NYS inspected:</strong> ' + ((apiary.nysInspected === true) ? 'Yes' : (apiary.nysInspected === false ? 'No' : 'N/A')) + '</div>' +
             '<div><strong>Treated:</strong> ' + ((apiary.treated === true) ? 'Yes' : (apiary.treated === false ? 'No' : 'N/A')) + '</div>' +
+            '<div><strong>Honey produced:</strong> ' + ((apiary.honeyProducedLbs == null) ? 'N/A' : apiary.honeyProducedLbs + ' lbs') + '</div>' +
             '<div><strong>Forage radius:</strong> ' + formatRadiusLabel(forageRadiusMeters) + '</div>' +
             '<div><strong>' + currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1) + ' bloom in ring:</strong> ' + bloomSummary.overallLabel + '</div>' +
             '<div><strong>Overlapping bloom areas:</strong> ' + bloomSummary.overlapCount + '</div>' +
@@ -733,11 +735,9 @@
             '<div><strong>Hives:</strong> ' + (apiary.hives ?? 'N/A') + '</div>' +
             '<div><strong>Type:</strong> ' + (apiary.type || 'Unknown') + '</div>' +
             '<div><strong>Mite count:</strong> ' + (apiary.miteCount ?? 'N/A') + '</div>' +
-            '<div class="mite-pill" style="background:' + getMiteIndicator(apiary.miteCount).color + ';">' +
-              '<span class="mite-dot"></span><span>' + getMiteIndicator(apiary.miteCount).label + '</span>' +
-            '</div>' +
             '<div><strong>NYS inspected:</strong> ' + ((apiary.nysInspected === true) ? 'Yes' : (apiary.nysInspected === false ? 'No' : 'N/A')) + '</div>' +
             '<div><strong>Treated:</strong> ' + ((apiary.treated === true) ? 'Yes' : (apiary.treated === false ? 'No' : 'N/A')) + '</div>' +
+            '<div><strong>Honey produced:</strong> ' + ((apiary.honeyProducedLbs == null) ? 'N/A' : apiary.honeyProducedLbs + ' lbs') + '</div>' +
             '<div><strong>Forage:</strong> ' + formatRadiusLabel(forageRadiusMeters) + '</div>' +
             '<div>' + (apiary.notes || '') + '</div>' +
           '</div>' +
