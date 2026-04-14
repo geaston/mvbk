@@ -28,6 +28,10 @@
     .small-note { font-size: 12px; color: #666; margin-top: 6px; }
     .section-title { font-size: 13px; font-weight: 700; color: #333; margin: 18px 0 10px; }
     .results-count { font-size: 12px; color: #555; margin-bottom: 10px; }
+    .legend-box { background: white; border: 1px solid #ddd; border-radius: 10px; padding: 10px; margin-bottom: 14px; font-size: 12px; color: #444; }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .legend-swatch { width: 14px; height: 14px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,.2); }
+    .pill-note { display: inline-block; margin-top: 6px; padding: 4px 8px; border-radius: 999px; background: #f3f3f3; font-size: 11px; }
     #map { height: 100%; width: 100%; }
     .leaflet-popup-content { line-height: 1.4; min-width: 260px; }
     .apiary-title { font-weight: 700; margin-bottom: 6px; font-size: 15px; }
@@ -71,7 +75,7 @@
   <div class="app">
     <aside id="sidebar" class="sidebar">
       <h1>MVBK Apiary Map</h1>
-      <p>Apiaries with forage rings, ring-based bloom scoring, and filter tools.</p>
+      <p>Apiaries with forage rings, bloom scoring, and candidate drone congregation areas.</p>
 
       <div class="control-block">
         <label for="foragePreset" class="control-label">Forage preset</label>
@@ -100,6 +104,30 @@
           <option value="overall">Overall</option>
         </select>
         <div class="small-note">Scores come from the amount of each land-cover polygon that overlaps the forage ring.</div>
+      </div>
+
+      <div class="section-title">Drone congregation areas</div>
+      <div class="control-block">
+        <label class="toggle-row">
+          <input type="checkbox" id="showDcaLayer" checked />
+          <span>Show candidate DCA hotspots</span>
+        </label>
+        <div class="small-note">These are likely congregation zones based on terrain pattern, not confirmed DCAs.</div>
+      </div>
+
+      <div class="control-block">
+        <label for="dcaFilter" class="control-label">DCA confidence</label>
+        <select id="dcaFilter">
+          <option value="">Any confidence</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+        </select>
+      </div>
+
+      <div class="legend-box">
+        <div class="legend-row"><span class="legend-swatch" style="background:#7b1fa2;"></span> High-confidence candidate DCA</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#ab47bc;"></span> Medium-confidence candidate DCA</div>
+        <div class="pill-note">Look for open saddles, clearings, field gaps, and edges away from obstacles.</div>
       </div>
 
       <div class="section-title">Filters</div>
@@ -189,6 +217,15 @@
       ]
     };
 
+    const dcaHotspots = [
+      { id: 'dca-1', name: 'Esperance Ridge Gap', lat: 42.774, lng: -74.262, confidence: 'high', terrainCue: 'ridge gap / open saddle', notes: 'Open gap between wooded edges with room for drone flight loops.' },
+      { id: 'dca-2', name: 'Central Bridge Air Lane', lat: 42.747, lng: -74.346, confidence: 'medium', terrainCue: 'field corridor', notes: 'Field opening bordered by tree lines that may funnel drone traffic.' },
+      { id: 'dca-3', name: 'Middleburgh South Opening', lat: 42.606, lng: -74.345, confidence: 'high', terrainCue: 'valley edge clearing', notes: 'Sunny opening near mixed edge habitat and sheltered wind pattern.' },
+      { id: 'dca-4', name: 'Cobleskill Orchard Gap', lat: 42.687, lng: -74.492, confidence: 'medium', terrainCue: 'orchard / hedgerow break', notes: 'Open lane near orchard edges with good line-of-flight visibility.' },
+      { id: 'dca-5', name: 'Richmondville Meadow Saddle', lat: 42.644, lng: -74.562, confidence: 'high', terrainCue: 'meadow saddle', notes: 'Likely drone gathering pocket between slight rises and open meadow.' },
+      { id: 'dca-6', name: 'Breakabeen Creek Opening', lat: 42.531, lng: -74.429, confidence: 'medium', terrainCue: 'creekside clearing', notes: 'Open patch with surrounding tree structure but clear central airspace.' }
+    ];
+
     const bloomScoringRules = {
       shrub_scrub: { spring: 2, summer: 3, fall: 3, overall: 3, label: 'Shrub / scrub' },
       pasture_hay: { spring: 2, summer: 2, fall: 2, overall: 2, label: 'Pasture / hay' },
@@ -209,6 +246,7 @@
 
     const markers = [];
     const forageCircles = [];
+    const dcaMarkers = [];
     const markerMap = new Map();
     const cardMap = new Map();
 
@@ -217,6 +255,8 @@
     const foragePresetSelect = document.getElementById('foragePreset');
     const showForageRingsCheckbox = document.getElementById('showForageRings');
     const seasonSelect = document.getElementById('seasonSelect');
+    const showDcaLayerCheckbox = document.getElementById('showDcaLayer');
+    const dcaFilter = document.getElementById('dcaFilter');
     const searchInput = document.getElementById('searchInput');
     const ownerFilter = document.getElementById('ownerFilter');
     const statusFilter = document.getElementById('statusFilter');
@@ -229,6 +269,7 @@
 
     let currentForagePresetMeters = Number(foragePresetSelect.value);
     let showForageRings = showForageRingsCheckbox.checked;
+    let showDcaLayer = showDcaLayerCheckbox.checked;
     let currentSeason = seasonSelect.value;
     let loadedApiaries = [];
     let apiarySummaries = [];
@@ -276,6 +317,11 @@
       markerMap.clear();
       cardMap.clear();
       listContainer.innerHTML = '';
+    }
+
+    function clearDcaMarkers() {
+      dcaMarkers.forEach(marker => map.removeLayer(marker));
+      dcaMarkers.length = 0;
     }
 
     function formatRadiusLabel(meters) {
@@ -372,6 +418,52 @@
       });
     }
 
+    function getDcaColor(confidence) {
+      return confidence === 'high' ? '#7b1fa2' : '#ab47bc';
+    }
+
+    function getFilteredDcas() {
+      const conf = dcaFilter.value;
+      return dcaHotspots.filter(dca => !conf || dca.confidence === conf);
+    }
+
+    function renderDcaLayer() {
+      clearDcaMarkers();
+      if (!showDcaLayer) return;
+
+      getFilteredDcas().forEach(dca => {
+        const color = getDcaColor(dca.confidence);
+        const marker = L.circleMarker([dca.lat, dca.lng], {
+          radius: dca.confidence === 'high' ? 9 : 7,
+          color,
+          weight: 2,
+          fillColor: color,
+          fillOpacity: 0.35
+        }).addTo(map);
+
+        marker.bindPopup(
+          '<div>' +
+            '<div class="apiary-title">' + dca.name + '</div>' +
+            '<div><strong>Type:</strong> Candidate drone congregation area</div>' +
+            '<div><strong>Confidence:</strong> ' + dca.confidence.charAt(0).toUpperCase() + dca.confidence.slice(1) + '</div>' +
+            '<div><strong>Terrain cue:</strong> ' + dca.terrainCue + '</div>' +
+            '<div><strong>Notes:</strong> ' + dca.notes + '</div>' +
+          '</div>'
+        );
+
+        dcaMarkers.push(marker);
+      });
+    }
+
+    function getNearestDca(apiary) {
+      let best = null;
+      dcaHotspots.forEach(dca => {
+        const dist = map.distance([apiary.lat, apiary.lng], [dca.lat, dca.lng]);
+        if (!best || dist < best.distanceMeters) best = { ...dca, distanceMeters: dist };
+      });
+      return best;
+    }
+
     function closeMobileMenu() {
       if (window.innerWidth <= 900) {
         sidebar.classList.remove('open');
@@ -395,6 +487,7 @@
 
       filtered.forEach(({ apiary, forageRadiusMeters, bloomSummary }) => {
         const color = getMarkerColor(apiary);
+        const nearestDca = getNearestDca(apiary);
 
         const bloomTopHtml = bloomSummary.topAreas.length
           ? bloomSummary.topAreas.map(area =>
@@ -412,6 +505,7 @@
             '<div><strong>' + currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1) + ' bloom in ring:</strong> ' + bloomSummary.overallLabel + '</div>' +
             '<div><strong>Overlapping bloom areas:</strong> ' + bloomSummary.overlapCount + '</div>' +
             '<div><strong>Total overlap:</strong> ' + formatAreaLabel(bloomSummary.totalOverlapAreaSqKm) + '</div>' +
+            '<div><strong>Nearest candidate DCA:</strong> ' + (nearestDca ? nearestDca.name + ' (' + (nearestDca.distanceMeters / 1000).toFixed(1) + ' km)' : 'None') + '</div>' +
             '<div style="margin-top:8px;"><strong>Largest overlaps:</strong></div>' +
             '<div>' + bloomTopHtml + '</div>' +
             '<div style="margin-top:8px;"><strong>Notes:</strong> ' + (apiary.notes || 'None') + '</div>' +
@@ -451,7 +545,7 @@
             '<div><strong>' + currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1) + ' bloom in ring:</strong> ' + bloomSummary.overallLabel + '</div>' +
             '<div><strong>Overlap count:</strong> ' + bloomSummary.overlapCount + '</div>' +
             '<div><strong>Total overlap:</strong> ' + formatAreaLabel(bloomSummary.totalOverlapAreaSqKm) + '</div>' +
-            '<div><strong>Largest overlap:</strong> ' + (bloomSummary.topAreas[0] ? bloomSummary.topAreas[0].name : 'None') + '</div>' +
+            '<div><strong>Nearest candidate DCA:</strong> ' + (nearestDca ? nearestDca.name : 'None') + '</div>' +
           '</div>';
 
         card.addEventListener('click', () => {
@@ -470,6 +564,7 @@
       const boundsLayers = [];
       if (markers.length > 0) boundsLayers.push(...markers);
       if (showForageRings && forageCircles.length > 0) boundsLayers.push(...forageCircles);
+      if (showDcaLayer && dcaMarkers.length > 0) boundsLayers.push(...dcaMarkers);
 
       if (boundsLayers.length > 0) {
         const featureGroup = L.featureGroup(boundsLayers);
@@ -488,6 +583,7 @@
 
     function refreshView() {
       buildApiarySummaries();
+      renderDcaLayer();
       renderFilteredApiaries();
     }
 
@@ -521,6 +617,17 @@
       refreshView();
     });
 
+    showDcaLayerCheckbox.addEventListener('change', () => {
+      showDcaLayer = showDcaLayerCheckbox.checked;
+      renderDcaLayer();
+      renderFilteredApiaries();
+    });
+
+    dcaFilter.addEventListener('change', () => {
+      renderDcaLayer();
+      renderFilteredApiaries();
+    });
+
     [searchInput, ownerFilter, statusFilter, bloomFilter, minHivesFilter].forEach(el => {
       el.addEventListener('input', renderFilteredApiaries);
       el.addEventListener('change', renderFilteredApiaries);
@@ -532,6 +639,8 @@
       statusFilter.value = '';
       bloomFilter.value = '';
       minHivesFilter.value = '';
+      dcaFilter.value = '';
+      renderDcaLayer();
       renderFilteredApiaries();
     });
 
@@ -555,4 +664,3 @@
   </script>
 </body>
 </html>
-
