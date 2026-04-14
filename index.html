@@ -21,7 +21,7 @@
     .apiary-card.active { border-color: #333; box-shadow: 0 0 0 2px rgba(0,0,0,.08); }
     .apiary-card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
     .apiary-name { font-weight: 700; font-size: 15px; }
-    .pill-wrap" + '<div class="status-pill"><span class="dot" style="background:' + (apiary.miteBiter ? '#1b5e20' : '#9e9e9e') + '"></span><span>' + (apiary.miteBiter ? 'Mite-biter' : 'Non-biter') + '</span></div>' + " { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+    .pill-wrap { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
     .status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 8px; border-radius: 999px; background: #f2f2f2; white-space: nowrap; }
     .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
     .apiary-meta { font-size: 13px; color: #444; line-height: 1.45; }
@@ -230,8 +230,7 @@
 
       <div class="control-block">
         <label for="miteThresholdFilter" class="control-label">High mite threshold</label>
-        <input id="miteThresholdFilter"
-      />
+        <input id="miteThresholdFilter" type="number" min="0" step="1" placeholder="Show yards at or above..." />
       </div>
 
       <div class="control-block">
@@ -240,7 +239,7 @@
           <option value="">Any</option>
           <option value="yes">Yes</option>
           <option value="no">No</option>
-        </select> type="number" min="0" step="1" placeholder="Show yards at or above..." />
+        </select>
       </div>
 
       <div class="control-block">
@@ -686,7 +685,8 @@
         card.innerHTML =
           '<div class="apiary-card-header">' +
             '<div class="apiary-name">' + (apiary.name || 'Unnamed Apiary') + '</div>' +
-            '<div class="pill-wrap" + '<div class="status-pill"><span class="dot" style="background:' + (apiary.miteBiter ? '#1b5e20' : '#9e9e9e') + '"></span><span>' + (apiary.miteBiter ? 'Mite-biter' : 'Non-biter') + '</span></div>' + "">' +
+            '<div class="pill-wrap">' +
+              '<div class="status-pill"><span class="dot" style="background:' + (apiary.miteBiter ? '#1b5e20' : '#9e9e9e') + '"></span><span>' + (apiary.miteBiter ? 'Mite-biter' : 'Non-biter') + '</span></div>' +
               '<div class="status-pill"><span class="dot" style="background:' + (statusColors[apiary.status] || '#999') + '"></span><span>' + (apiary.status || 'Unknown') + '</span></div>' +
               '<div class="status-pill"><span class="dot" style="background:' + (typeColors[apiary.type] || color) + '"></span><span>' + (apiary.type || 'Unknown') + '</span></div>' +
             '</div>' +
