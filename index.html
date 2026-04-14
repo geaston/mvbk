@@ -21,6 +21,7 @@
     .apiary-card.active { border-color: #333; box-shadow: 0 0 0 2px rgba(0,0,0,.08); }
     .apiary-card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
     .apiary-name { font-weight: 700; font-size: 15px; }
+    .pill-wrap { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
     .status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 8px; border-radius: 999px; background: #f2f2f2; white-space: nowrap; }
     .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
     .apiary-meta { font-size: 13px; color: #444; line-height: 1.45; }
@@ -106,6 +107,21 @@
         <div class="small-note">Scores come from the amount of each land-cover polygon that overlaps the forage ring.</div>
       </div>
 
+      <div class="control-block">
+        <label class="toggle-row">
+          <input type="checkbox" id="showBloomPolygons" />
+          <span>Show bloom polygons</span>
+        </label>
+        <div class="small-note">Optional overlay showing the bloom-source polygons used in the scoring.</div>
+      </div>
+
+      <div class="legend-box">
+        <div class="legend-row"><span class="legend-swatch" style="background:#2e7d32;"></span> High bloom potential</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#f9a825;"></span> Medium bloom potential</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#9e9e9e;"></span> Low bloom potential</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#d32f2f;"></span> Poor bloom potential</div>
+      </div>
+
       <div class="section-title">Drone congregation areas</div>
       <div class="control-block">
         <label class="toggle-row">
@@ -128,6 +144,25 @@
         <div class="legend-row"><span class="legend-swatch" style="background:#7b1fa2;"></span> High-confidence candidate DCA</div>
         <div class="legend-row"><span class="legend-swatch" style="background:#ab47bc;"></span> Medium-confidence candidate DCA</div>
         <div class="pill-note">Look for open saddles, clearings, field gaps, and edges away from obstacles.</div>
+      </div>
+
+      <div class="section-title">Apiary type</div>
+      <div class="control-block">
+        <label for="typeFilter" class="control-label">Type</label>
+        <select id="typeFilter">
+          <option value="">All types</option>
+          <option value="honey yard">Honey yard</option>
+          <option value="nuc yard">Nuc yard</option>
+          <option value="drone flood">Drone flood</option>
+          <option value="queen mating">Queen mating</option>
+        </select>
+      </div>
+
+      <div class="legend-box">
+        <div class="legend-row"><span class="legend-swatch" style="background:#d4a017;"></span> Honey yard</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#00897b;"></span> Nuc yard</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#8e24aa;"></span> Drone flood</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#3949ab;"></span> Queen mating</div>
       </div>
 
       <div class="section-title">Filters</div>
@@ -244,9 +279,17 @@
       inactive: '#757575'
     };
 
+    const typeColors = {
+      'honey yard': '#d4a017',
+      'nuc yard': '#00897b',
+      'drone flood': '#8e24aa',
+      'queen mating': '#3949ab'
+    };
+
     const markers = [];
     const forageCircles = [];
     const dcaMarkers = [];
+    let bloomPolygonLayer = null;
     const markerMap = new Map();
     const cardMap = new Map();
 
@@ -255,12 +298,14 @@
     const foragePresetSelect = document.getElementById('foragePreset');
     const showForageRingsCheckbox = document.getElementById('showForageRings');
     const seasonSelect = document.getElementById('seasonSelect');
+    const showBloomPolygonsCheckbox = document.getElementById('showBloomPolygons');
     const showDcaLayerCheckbox = document.getElementById('showDcaLayer');
     const dcaFilter = document.getElementById('dcaFilter');
     const searchInput = document.getElementById('searchInput');
     const ownerFilter = document.getElementById('ownerFilter');
     const statusFilter = document.getElementById('statusFilter');
     const bloomFilter = document.getElementById('bloomFilter');
+    const typeFilter = document.getElementById('typeFilter');
     const minHivesFilter = document.getElementById('minHivesFilter');
     const resetFiltersBtn = document.getElementById('resetFiltersBtn');
     const sidebar = document.getElementById('sidebar');
@@ -271,6 +316,7 @@
     let showForageRings = showForageRingsCheckbox.checked;
     let showDcaLayer = showDcaLayerCheckbox.checked;
     let currentSeason = seasonSelect.value;
+    let showBloomPolygons = showBloomPolygonsCheckbox.checked;
     let loadedApiaries = [];
     let apiarySummaries = [];
 
@@ -292,7 +338,7 @@
     }
 
     function getMarkerColor(apiary) {
-      return apiary.markerColor || statusColors[apiary.status] || '#8e24aa';
+      return apiary.markerColor || typeColors[apiary.type] || statusColors[apiary.status] || '#8e24aa';
     }
 
     function createDivIcon(color) {
@@ -333,6 +379,52 @@
     function formatAreaLabel(sqKm) {
       const acres = sqKm * 247.105;
       return sqKm.toFixed(2) + ' km² / ' + acres.toFixed(0) + ' acres';
+    }
+
+
+    function scoreToColor(score) {
+      if (score >= 3) return '#2e7d32';
+      if (score >= 2) return '#f9a825';
+      if (score >= 1) return '#9e9e9e';
+      return '#d32f2f';
+    }
+
+    function clearBloomPolygonLayer() {
+      if (bloomPolygonLayer) {
+        map.removeLayer(bloomPolygonLayer);
+        bloomPolygonLayer = null;
+      }
+    }
+
+    function renderBloomPolygonLayer() {
+      clearBloomPolygonLayer();
+      if (!showBloomPolygons) return;
+
+      bloomPolygonLayer = L.geoJSON(bloomAreaData, {
+        style: feature => {
+          const score = getScoreForFeature(feature);
+          const color = scoreToColor(score);
+          return {
+            color: color,
+            weight: 1,
+            fillColor: color,
+            fillOpacity: 0.22
+          };
+        },
+        onEachFeature: (feature, layer) => {
+          const rule = getRuleForFeature(feature);
+          const score = getScoreForFeature(feature);
+          const seasonName = currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1);
+          layer.bindPopup(
+            '<div>' +
+              '<div class="apiary-title">' + (feature.properties.name || 'Bloom area') + '</div>' +
+              '<div><strong>Land cover:</strong> ' + rule.label + '</div>' +
+              '<div><strong>' + seasonName + ' bloom potential:</strong> ' + scoreToLabel(score) + '</div>' +
+              '<div><strong>Notes:</strong> ' + (feature.properties.notes || 'None') + '</div>' +
+            '</div>'
+          );
+        }
+      }).addTo(map);
     }
 
     function summarizeBloomOverlap(apiary, forageRadiusMeters) {
@@ -405,16 +497,18 @@
       const owner = ownerFilter.value;
       const status = statusFilter.value;
       const bloom = bloomFilter.value;
+      const type = typeFilter.value;
       const minHives = minHivesFilter.value === '' ? null : Number(minHivesFilter.value);
 
       return apiarySummaries.filter(({ apiary, bloomSummary }) => {
-        const haystack = [apiary.name || '', apiary.owner || '', apiary.notes || '', apiary.status || ''].join(' ').toLowerCase();
+        const haystack = [apiary.name || '', apiary.owner || '', apiary.notes || '', apiary.status || '', apiary.type || ''].join(' ').toLowerCase();
         const matchesSearch = !q || haystack.includes(q);
         const matchesOwner = !owner || apiary.owner === owner;
         const matchesStatus = !status || apiary.status === status;
         const matchesBloom = !bloom || bloomSummary.overallLabel === bloom;
+        const matchesType = !type || apiary.type === type;
         const matchesMinHives = minHives === null || Number(apiary.hives || 0) >= minHives;
-        return matchesSearch && matchesOwner && matchesStatus && matchesBloom && matchesMinHives;
+        return matchesSearch && matchesOwner && matchesStatus && matchesBloom && matchesType && matchesMinHives;
       });
     }
 
@@ -501,6 +595,7 @@
             '<div><strong>Owner:</strong> ' + (apiary.owner || 'Unknown') + '</div>' +
             '<div><strong>Hives:</strong> ' + (apiary.hives ?? 'N/A') + '</div>' +
             '<div><strong>Status:</strong> ' + (apiary.status || 'Unknown') + '</div>' +
+            '<div><strong>Type:</strong> ' + (apiary.type || 'Unknown') + '</div>' +
             '<div><strong>Forage radius:</strong> ' + formatRadiusLabel(forageRadiusMeters) + '</div>' +
             '<div><strong>' + currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1) + ' bloom in ring:</strong> ' + bloomSummary.overallLabel + '</div>' +
             '<div><strong>Overlapping bloom areas:</strong> ' + bloomSummary.overlapCount + '</div>' +
@@ -533,11 +628,15 @@
         card.innerHTML =
           '<div class="apiary-card-header">' +
             '<div class="apiary-name">' + (apiary.name || 'Unnamed Apiary') + '</div>' +
-            '<div class="status-pill"><span class="dot" style="background:' + color + '"></span><span>' + (apiary.status || 'Unknown') + '</span></div>' +
+            '<div class="pill-wrap">' +
+              '<div class="status-pill"><span class="dot" style="background:' + (statusColors[apiary.status] || '#999') + '"></span><span>' + (apiary.status || 'Unknown') + '</span></div>' +
+              '<div class="status-pill"><span class="dot" style="background:' + (typeColors[apiary.type] || color) + '"></span><span>' + (apiary.type || 'Unknown') + '</span></div>' +
+            '</div>' +
           '</div>' +
           '<div class="apiary-meta">' +
             '<div><strong>Owner:</strong> ' + (apiary.owner || 'Unknown') + '</div>' +
             '<div><strong>Hives:</strong> ' + (apiary.hives ?? 'N/A') + '</div>' +
+            '<div><strong>Type:</strong> ' + (apiary.type || 'Unknown') + '</div>' +
             '<div><strong>Forage:</strong> ' + formatRadiusLabel(forageRadiusMeters) + '</div>' +
             '<div>' + (apiary.notes || '') + '</div>' +
           '</div>' +
@@ -565,6 +664,7 @@
       if (markers.length > 0) boundsLayers.push(...markers);
       if (showForageRings && forageCircles.length > 0) boundsLayers.push(...forageCircles);
       if (showDcaLayer && dcaMarkers.length > 0) boundsLayers.push(...dcaMarkers);
+      if (showBloomPolygons && bloomPolygonLayer) boundsLayers.push(bloomPolygonLayer);
 
       if (boundsLayers.length > 0) {
         const featureGroup = L.featureGroup(boundsLayers);
@@ -583,6 +683,7 @@
 
     function refreshView() {
       buildApiarySummaries();
+      renderBloomPolygonLayer();
       renderDcaLayer();
       renderFilteredApiaries();
     }
@@ -623,12 +724,18 @@
       renderFilteredApiaries();
     });
 
+    showBloomPolygonsCheckbox.addEventListener('change', () => {
+      showBloomPolygons = showBloomPolygonsCheckbox.checked;
+      renderBloomPolygonLayer();
+      renderFilteredApiaries();
+    });
+
     dcaFilter.addEventListener('change', () => {
       renderDcaLayer();
       renderFilteredApiaries();
     });
 
-    [searchInput, ownerFilter, statusFilter, bloomFilter, minHivesFilter].forEach(el => {
+    [searchInput, ownerFilter, statusFilter, bloomFilter, typeFilter, minHivesFilter].forEach(el => {
       el.addEventListener('input', renderFilteredApiaries);
       el.addEventListener('change', renderFilteredApiaries);
     });
@@ -638,6 +745,7 @@
       ownerFilter.value = '';
       statusFilter.value = '';
       bloomFilter.value = '';
+      typeFilter.value = '';
       minHivesFilter.value = '';
       dcaFilter.value = '';
       renderDcaLayer();
