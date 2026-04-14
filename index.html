@@ -242,6 +242,30 @@
         </select>
       </div>
 
+      <div class="section-title">Mite-biter influence</div>
+      <div class="control-block">
+        <label class="toggle-row">
+          <input type="checkbox" id="showMiteBiterInfluence" checked />
+          <span>Show mite-biter influence zones</span>
+        </label>
+        <div class="small-note">Shows influence rings around yards marked as mite-biter stock.</div>
+      </div>
+
+      <div class="control-block">
+        <label for="miteBiterInfluenceRadius" class="control-label">Influence radius</label>
+        <select id="miteBiterInfluenceRadius">
+          <option value="1600">1.0 mile</option>
+          <option value="2400" selected>1.5 miles</option>
+          <option value="3200">2.0 miles</option>
+          <option value="4800">3.0 miles</option>
+        </select>
+      </div>
+
+      <div class="legend-box">
+        <div class="legend-row"><span class="legend-swatch" style="background:#1b5e20;"></span> Mite-biter influence zone</div>
+        <div class="pill-note">Use this to visualize where resistant stock may be contributing drones and survivor genetics.</div>
+      </div>
+
       <div class="control-block">
         <button id="resetFiltersBtn" class="btn" type="button">Reset filters</button>
       </div>
@@ -324,6 +348,7 @@
     const markers = [];
     const forageCircles = [];
     const dcaMarkers = [];
+    const miteBiterInfluenceCircles = [];
     let bloomPolygonLayer = null;
     const markerMap = new Map();
     const cardMap = new Map();
@@ -346,6 +371,8 @@
     const inspectedFilter = document.getElementById('inspectedFilter');
     const miteThresholdFilter = document.getElementById('miteThresholdFilter');
     const miteBiterFilter = document.getElementById('miteBiterFilter');
+    const showMiteBiterInfluenceCheckbox = document.getElementById('showMiteBiterInfluence');
+    const miteBiterInfluenceRadiusSelect = document.getElementById('miteBiterInfluenceRadius');
     const resetFiltersBtn = document.getElementById('resetFiltersBtn');
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -356,6 +383,8 @@
     let showDcaLayer = showDcaLayerCheckbox.checked;
     let currentSeason = seasonSelect.value;
     let showBloomPolygons = showBloomPolygonsCheckbox.checked;
+    let showMiteBiterInfluence = showMiteBiterInfluenceCheckbox.checked;
+    let miteBiterInfluenceRadiusMeters = Number(miteBiterInfluenceRadiusSelect.value);
     let loadedApiaries = [];
     let apiarySummaries = [];
 
@@ -726,6 +755,7 @@
       if (showForageRings && forageCircles.length > 0) boundsLayers.push(...forageCircles);
       if (showDcaLayer && dcaMarkers.length > 0) boundsLayers.push(...dcaMarkers);
       if (showBloomPolygons && bloomPolygonLayer) boundsLayers.push(bloomPolygonLayer);
+      if (showMiteBiterInfluence && miteBiterInfluenceCircles.length > 0) boundsLayers.push(...miteBiterInfluenceCircles);
 
       if (boundsLayers.length > 0) {
         const featureGroup = L.featureGroup(boundsLayers);
@@ -742,10 +772,48 @@
       resultsCount.textContent = '';
     }
 
+
+    function clearMiteBiterInfluenceCircles() {
+      miteBiterInfluenceCircles.forEach(circle => map.removeLayer(circle));
+      miteBiterInfluenceCircles.length = 0;
+    }
+
+    function renderMiteBiterInfluence() {
+      clearMiteBiterInfluenceCircles();
+      if (!showMiteBiterInfluence) return;
+
+      loadedApiaries
+        .filter(apiary => apiary.miteBiter === true && typeof apiary.lat === 'number' && typeof apiary.lng === 'number')
+        .forEach(apiary => {
+          const circle = L.circle([apiary.lat, apiary.lng], {
+            radius: miteBiterInfluenceRadiusMeters,
+            color: '#1b5e20',
+            weight: 2,
+            dashArray: '6,6',
+            fillColor: '#2e7d32',
+            fillOpacity: 0.08
+          }).bindPopup(
+            '<div>' +
+              '<div class="apiary-title">' + (apiary.name || 'Mite-biter yard') + '</div>' +
+              '<div><strong>Overlay:</strong> Mite-biter influence zone</div>' +
+              '<div><strong>Radius:</strong> ' + formatRadiusLabel(miteBiterInfluenceRadiusMeters) + '</div>' +
+              '<div><strong>Owner:</strong> ' + (apiary.owner || 'Unknown') + '</div>' +
+              '<div><strong>Type:</strong> ' + (apiary.type || 'Unknown') + '</div>' +
+              '<div><strong>Mite-biter:</strong> Yes</div>' +
+              '<div><strong>Notes:</strong> ' + (apiary.notes || 'None') + '</div>' +
+            '</div>'
+          );
+
+          circle.addTo(map);
+          miteBiterInfluenceCircles.push(circle);
+        });
+    }
+
     function refreshView() {
       buildApiarySummaries();
       renderBloomPolygonLayer();
       renderDcaLayer();
+      renderMiteBiterInfluence();
       renderFilteredApiaries();
     }
 
@@ -782,6 +850,19 @@
     showDcaLayerCheckbox.addEventListener('change', () => {
       showDcaLayer = showDcaLayerCheckbox.checked;
       renderDcaLayer();
+      renderFilteredApiaries();
+    });
+
+
+    showMiteBiterInfluenceCheckbox.addEventListener('change', () => {
+      showMiteBiterInfluence = showMiteBiterInfluenceCheckbox.checked;
+      renderMiteBiterInfluence();
+      renderFilteredApiaries();
+    });
+
+    miteBiterInfluenceRadiusSelect.addEventListener('change', () => {
+      miteBiterInfluenceRadiusMeters = Number(miteBiterInfluenceRadiusSelect.value);
+      renderMiteBiterInfluence();
       renderFilteredApiaries();
     });
 
