@@ -12,6 +12,7 @@
     "nysInspected": true,
     "treated": true,
     "miteBiter": true,
+    "honeyProducedLbs": 420,
     "notes": "Top producer and showing mite-biter traits."
   },
   {
@@ -27,7 +28,8 @@
     "nysInspected": false,
     "treated": true,
     "miteBiter": false,
-    "notes": "Standard nuc production yard."
+    "honeyProducedLbs": 40,
+    "notes": "Used for splits and overwintered nucs."
   },
   {
     "id": 3,
@@ -42,6 +44,7 @@
     "nysInspected": false,
     "treated": false,
     "miteBiter": true,
+    "honeyProducedLbs": 0,
     "notes": "Untreated survivor line expansion."
   },
   {
@@ -57,6 +60,7 @@
     "nysInspected": true,
     "treated": true,
     "miteBiter": false,
+    "honeyProducedLbs": 560,
     "notes": "High production, conventional management."
   },
   {
@@ -72,6 +76,7 @@
     "nysInspected": false,
     "treated": true,
     "miteBiter": false,
+    "honeyProducedLbs": 55,
     "notes": "Higher mite pressure, requires management."
   },
   {
@@ -87,6 +92,7 @@
     "nysInspected": false,
     "treated": false,
     "miteBiter": true,
+    "honeyProducedLbs": 15,
     "notes": "Selected breeder queens with mite-biter genetics."
   },
   {
@@ -102,6 +108,7 @@
     "nysInspected": true,
     "treated": true,
     "miteBiter": false,
+    "honeyProducedLbs": 610,
     "notes": "Pollination + honey production."
   },
   {
@@ -117,6 +124,7 @@
     "nysInspected": false,
     "treated": false,
     "miteBiter": true,
+    "honeyProducedLbs": 25,
     "notes": "Drone source for mite-resistant genetics."
   },
   {
@@ -132,6 +140,7 @@
     "nysInspected": true,
     "treated": false,
     "miteBiter": true,
+    "honeyProducedLbs": 455,
     "notes": "Strong untreated colony performance."
   },
   {
@@ -147,6 +156,7 @@
     "nysInspected": false,
     "treated": false,
     "miteBiter": true,
+    "honeyProducedLbs": 0,
     "notes": "Planned drone saturation yard for genetics."
   },
   {
@@ -162,6 +172,7 @@
     "nysInspected": true,
     "treated": false,
     "miteBiter": true,
+    "honeyProducedLbs": 0,
     "notes": "Resting breeder yard."
   },
   {
@@ -177,6 +188,7 @@
     "nysInspected": true,
     "treated": true,
     "miteBiter": false,
+    "honeyProducedLbs": 60,
     "notes": "Reliable nuc production yard."
   },
   {
@@ -192,6 +204,7 @@
     "nysInspected": false,
     "treated": false,
     "miteBiter": true,
+    "honeyProducedLbs": 20,
     "notes": "Sheltered mating yard with selected lines."
   },
   {
@@ -207,6 +220,7 @@
     "nysInspected": false,
     "treated": true,
     "miteBiter": false,
+    "honeyProducedLbs": 0,
     "notes": "Swarm capture + splits."
   },
   {
@@ -222,6 +236,7 @@
     "nysInspected": true,
     "treated": true,
     "miteBiter": true,
+    "honeyProducedLbs": 505,
     "notes": "Excellent late flow and strong genetics."
   }
 ]
