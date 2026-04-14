@@ -7,6 +7,10 @@
     "hives": 8,
     "owner": "Glenn",
     "status": "active",
+    "type": "honey yard",
+    "miteCount": 2,
+    "nysInspected": true,
+    "treated": true,
     "notes": "Good morning sun, partial afternoon shade."
   },
   {
@@ -17,6 +21,10 @@
     "hives": 4,
     "owner": "Club Member",
     "status": "needs attention",
+    "type": "nuc yard",
+    "miteCount": 5,
+    "nysInspected": false,
+    "treated": false,
     "notes": "Near forage corridor and stream edge."
   },
   {
@@ -27,6 +35,10 @@
     "hives": 12,
     "owner": "Demo Yard",
     "status": "planned",
+    "type": "honey yard",
+    "miteCount": 1,
+    "nysInspected": true,
+    "treated": false,
     "notes": "Windbreak on west side."
   },
   {
@@ -37,6 +49,10 @@
     "hives": 10,
     "owner": "MVBK Member A",
     "status": "active",
+    "type": "honey yard",
+    "miteCount": 2,
+    "nysInspected": true,
+    "treated": true,
     "notes": "Open valley site with good clover nearby."
   },
   {
@@ -47,6 +63,10 @@
     "hives": 6,
     "owner": "MVBK Member B",
     "status": "active",
+    "type": "nuc yard",
+    "miteCount": 3,
+    "nysInspected": false,
+    "treated": true,
     "notes": "Close to creek corridor and mixed hedgerows."
   },
   {
@@ -57,6 +77,10 @@
     "hives": 5,
     "owner": "MVBK Member C",
     "status": "planned",
+    "type": "queen mating",
+    "miteCount": 1,
+    "nysInspected": false,
+    "treated": false,
     "notes": "South-facing slope with early spring sun."
   },
   {
@@ -67,6 +91,10 @@
     "hives": 14,
     "owner": "MVBK Member D",
     "status": "active",
+    "type": "honey yard",
+    "miteCount": 4,
+    "nysInspected": true,
+    "treated": true,
     "notes": "Adjacent to orchard pollination blocks."
   },
   {
@@ -77,6 +105,10 @@
     "hives": 7,
     "owner": "MVBK Member E",
     "status": "needs attention",
+    "type": "drone flood",
+    "miteCount": 6,
+    "nysInspected": false,
+    "treated": true,
     "notes": "Good forage, but exposed to wind from the northwest."
   },
   {
@@ -87,6 +119,10 @@
     "hives": 9,
     "owner": "MVBK Member F",
     "status": "active",
+    "type": "honey yard",
+    "miteCount": 2,
+    "nysInspected": true,
+    "treated": false,
     "notes": "Near farm fields and roadside wildflowers."
   },
   {
@@ -97,6 +133,10 @@
     "hives": 11,
     "owner": "MVBK Member G",
     "status": "planned",
+    "type": "drone flood",
+    "miteCount": 3,
+    "nysInspected": false,
+    "treated": true,
     "notes": "Ridgetop site with excellent summer bloom."
   },
   {
@@ -107,6 +147,10 @@
     "hives": 4,
     "owner": "MVBK Member H",
     "status": "inactive",
+    "type": "queen mating",
+    "miteCount": 0,
+    "nysInspected": true,
+    "treated": false,
     "notes": "Former club site, currently resting."
   },
   {
@@ -117,6 +161,10 @@
     "hives": 8,
     "owner": "MVBK Member I",
     "status": "active",
+    "type": "nuc yard",
+    "miteCount": 2,
+    "nysInspected": true,
+    "treated": true,
     "notes": "Forest edge with goldenrod and aster flow nearby."
   },
   {
@@ -127,6 +175,10 @@
     "hives": 6,
     "owner": "MVBK Member J",
     "status": "active",
+    "type": "queen mating",
+    "miteCount": 1,
+    "nysInspected": false,
+    "treated": false,
     "notes": "Sheltered site with water close by."
   },
   {
@@ -137,6 +189,10 @@
     "hives": 5,
     "owner": "MVBK Member K",
     "status": "planned",
+    "type": "nuc yard",
+    "miteCount": 4,
+    "nysInspected": false,
+    "treated": true,
     "notes": "New satellite yard for swarm capture response."
   },
   {
@@ -147,6 +203,10 @@
     "hives": 13,
     "owner": "MVBK Member L",
     "status": "active",
+    "type": "honey yard",
+    "miteCount": 2,
+    "nysInspected": true,
+    "treated": true,
     "notes": "Broad valley forage and excellent late-summer bloom."
   }
 ]
