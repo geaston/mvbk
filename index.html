@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,16 +7,14 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <style>
     html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
+    body { overflow: hidden; }
     .app { display: grid; grid-template-columns: 360px 1fr; height: 100vh; width: 100%; }
-    .sidebar { border-right: 1px solid #ddd; background: #fafafa; overflow-y: auto; padding: 16px; box-sizing: border-box; }
+    .sidebar { border-right: 1px solid #ddd; background: #fafafa; overflow-y: auto; padding: 16px; box-sizing: border-box; z-index: 1100; }
     .sidebar h1 { font-size: 20px; margin: 0 0 8px; }
     .sidebar p { font-size: 14px; color: #555; margin: 0 0 16px; }
     .control-block { margin-bottom: 14px; }
     .control-label { display:block; font-size:13px; font-weight:700; margin-bottom:6px; }
     .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-    .legend { margin-top: 10px; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 10px; font-size: 12px; }
-    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .legend-swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; border: 1px solid rgba(0,0,0,0.15); }
     .apiary-list { display: flex; flex-direction: column; gap: 10px; }
     .apiary-card { border: 1px solid #ddd; border-radius: 10px; background: white; padding: 12px; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
     .apiary-card:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.08); }
@@ -27,27 +24,54 @@
     .status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 8px; border-radius: 999px; background: #f2f2f2; white-space: nowrap; }
     .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
     .apiary-meta { font-size: 13px; color: #444; line-height: 1.45; }
-    .apiary-submeta { font-size: 12px; color: #5a5a5a; line-height: 1.4; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ddd; }
+    .apiary-submeta { font-size: 12px; color: #5a5a5a; line-height: 1.45; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ddd; }
+    .small-note { font-size: 12px; color: #666; margin-top: 6px; }
+    .section-title { font-size: 13px; font-weight: 700; color: #333; margin: 18px 0 10px; }
+    .results-count { font-size: 12px; color: #555; margin-bottom: 10px; }
     #map { height: 100%; width: 100%; }
-    .leaflet-popup-content { line-height: 1.4; min-width: 240px; }
+    .leaflet-popup-content { line-height: 1.4; min-width: 260px; }
     .apiary-title { font-weight: 700; margin-bottom: 6px; font-size: 15px; }
     .custom-div-icon { background: transparent; border: none; }
     .marker-pin { width: 18px; height: 18px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
-    select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 8px; background: white; }
+    select, input[type="text"], input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 8px; background: white; box-sizing: border-box; }
     input[type="checkbox"] { width: 16px; height: 16px; }
-    .section-title { font-size: 13px; font-weight: 700; color: #333; margin: 18px 0 10px; }
-    .small-note { font-size: 12px; color: #666; margin-top: 6px; }
+    .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 9px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; cursor: pointer; font-size: 13px; }
+    .btn:hover { background: #f3f3f3; }
+    .hamburger-btn {
+      position: fixed; top: 12px; left: 12px; z-index: 1200; width: 44px; height: 44px;
+      border-radius: 10px; border: 1px solid rgba(0,0,0,.15); background: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,.15); display: none; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .hamburger-lines { width: 18px; height: 14px; position: relative; display: inline-block; }
+    .hamburger-lines span { position: absolute; left: 0; right: 0; height: 2px; background: #222; border-radius: 2px; }
+    .hamburger-lines span:nth-child(1) { top: 0; }
+    .hamburger-lines span:nth-child(2) { top: 6px; }
+    .hamburger-lines span:nth-child(3) { top: 12px; }
+    .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 1090; display: none; }
     @media (max-width: 900px) {
-      .app { grid-template-columns: 1fr; grid-template-rows: 560px 1fr; }
-      .sidebar { border-right: none; border-bottom: 1px solid #ddd; }
+      .app { grid-template-columns: 1fr; }
+      .sidebar {
+        position: fixed; top: 0; left: 0; bottom: 0; width: min(88vw, 360px);
+        transform: translateX(-100%); transition: transform .2s ease;
+        box-shadow: 4px 0 18px rgba(0,0,0,.18);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .hamburger-btn { display: inline-flex; }
+      .sidebar-overlay.open { display: block; }
     }
   </style>
 </head>
 <body>
+  <button id="hamburgerBtn" class="hamburger-btn" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">
+    <span class="hamburger-lines"><span></span><span></span><span></span></span>
+  </button>
+  <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
   <div class="app">
-    <aside class="sidebar">
+    <aside id="sidebar" class="sidebar">
       <h1>MVBK Apiary Map</h1>
-      <p>Apiaries, forage rings, and a bloom-potential layer based on land-cover classes.</p>
+      <p>Apiaries with forage rings, ring-based bloom scoring, and filter tools.</p>
 
       <div class="control-block">
         <label for="foragePreset" class="control-label">Forage preset</label>
@@ -66,15 +90,7 @@
         </label>
       </div>
 
-      <div class="section-title">Bloom layer</div>
-
-      <div class="control-block">
-        <label class="toggle-row">
-          <input type="checkbox" id="showBloomLayer" checked />
-          <span>Show bloom layer</span>
-        </label>
-      </div>
-
+      <div class="section-title">Bloom scoring</div>
       <div class="control-block">
         <label for="seasonSelect" class="control-label">Bloom season</label>
         <select id="seasonSelect">
@@ -83,26 +99,69 @@
           <option value="fall">Fall</option>
           <option value="overall">Overall</option>
         </select>
-        <div class="small-note">Scores are derived from land-cover class rules, not direct bloom observation.</div>
+        <div class="small-note">Scores come from the amount of each land-cover polygon that overlaps the forage ring.</div>
       </div>
 
-      <div class="legend" id="bloomLegend">
-        <div class="legend-row"><span class="legend-swatch" style="background:#2e7d32;"></span> High bloom potential</div>
-        <div class="legend-row"><span class="legend-swatch" style="background:#f9a825;"></span> Medium bloom potential</div>
-        <div class="legend-row"><span class="legend-swatch" style="background:#9e9e9e;"></span> Low bloom potential</div>
-        <div class="legend-row"><span class="legend-swatch" style="background:#d32f2f;"></span> Poor bloom potential</div>
+      <div class="section-title">Filters</div>
+      <div class="control-block">
+        <label for="searchInput" class="control-label">Search</label>
+        <input id="searchInput" type="text" placeholder="Search name, owner, notes..." />
       </div>
+
+      <div class="filter-grid">
+        <div class="control-block">
+          <label for="ownerFilter" class="control-label">Owner</label>
+          <select id="ownerFilter">
+            <option value="">All owners</option>
+          </select>
+        </div>
+        <div class="control-block">
+          <label for="statusFilter" class="control-label">Status</label>
+          <select id="statusFilter">
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="planned">Planned</option>
+            <option value="needs attention">Needs attention</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-grid">
+        <div class="control-block">
+          <label for="bloomFilter" class="control-label">Bloom in ring</label>
+          <select id="bloomFilter">
+            <option value="">Any bloom rating</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+            <option value="Poor">Poor</option>
+          </select>
+        </div>
+        <div class="control-block">
+          <label for="minHivesFilter" class="control-label">Min hives</label>
+          <input id="minHivesFilter" type="number" min="0" step="1" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="control-block">
+        <button id="resetFiltersBtn" class="btn" type="button">Reset filters</button>
+      </div>
+
+      <div id="resultsCount" class="results-count"></div>
 
       <div class="section-title">Apiaries</div>
       <div id="apiaryList" class="apiary-list"></div>
     </aside>
+
     <div id="map"></div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <script>
-    const esperanceCenter = [42.69, -74.40];
-    const map = L.map('map').setView(esperanceCenter, 11);
+    const mapCenter = [42.69, -74.40];
+    const map = L.map('map').setView(mapCenter, 11);
 
     const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
@@ -152,25 +211,36 @@
     const forageCircles = [];
     const markerMap = new Map();
     const cardMap = new Map();
+
     const listContainer = document.getElementById('apiaryList');
+    const resultsCount = document.getElementById('resultsCount');
     const foragePresetSelect = document.getElementById('foragePreset');
     const showForageRingsCheckbox = document.getElementById('showForageRings');
-    const showBloomLayerCheckbox = document.getElementById('showBloomLayer');
     const seasonSelect = document.getElementById('seasonSelect');
-    const bloomLegend = document.getElementById('bloomLegend');
+    const searchInput = document.getElementById('searchInput');
+    const ownerFilter = document.getElementById('ownerFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const bloomFilter = document.getElementById('bloomFilter');
+    const minHivesFilter = document.getElementById('minHivesFilter');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
 
     let currentForagePresetMeters = Number(foragePresetSelect.value);
     let showForageRings = showForageRingsCheckbox.checked;
-    let showBloomLayer = showBloomLayerCheckbox.checked;
     let currentSeason = seasonSelect.value;
     let loadedApiaries = [];
-    let bloomLayer = null;
+    let apiarySummaries = [];
 
-    function scoreToColor(score) {
-      if (score >= 3) return '#2e7d32';
-      if (score >= 2) return '#f9a825';
-      if (score >= 1) return '#9e9e9e';
-      return '#d32f2f';
+    function getRuleForFeature(feature) {
+      const landCoverClass = feature.properties.landCoverClass;
+      return bloomScoringRules[landCoverClass] || { spring: 0, summer: 0, fall: 0, overall: 0, label: landCoverClass };
+    }
+
+    function getScoreForFeature(feature) {
+      const rule = getRuleForFeature(feature);
+      return rule[currentSeason] ?? rule.overall ?? 0;
     }
 
     function scoreToLabel(score) {
@@ -180,93 +250,6 @@
       return 'Poor';
     }
 
-    function getBloomProperties(feature) {
-      const landCoverClass = feature.properties.landCoverClass;
-      const rule = bloomScoringRules[landCoverClass] || { spring: 0, summer: 0, fall: 0, overall: 0, label: landCoverClass };
-      return { rule, score: rule[currentSeason] ?? rule.overall ?? 0 };
-    }
-
-    function getFeatureBoundsCenter(feature) {
-      const coords = feature.geometry.coordinates[0];
-      let latSum = 0;
-      let lngSum = 0;
-      coords.forEach(coord => {
-        lngSum += coord[0];
-        latSum += coord[1];
-      });
-      return {
-        lat: latSum / coords.length,
-        lng: lngSum / coords.length
-      };
-    }
-
-    function getDistanceMeters(lat1, lng1, lat2, lng2) {
-      return map.distance([lat1, lng1], [lat2, lng2]);
-    }
-
-    function summarizeBloomForApiary(apiary, forageRadiusMeters) {
-      const overlaps = [];
-      let weightedScoreSum = 0;
-      let weightSum = 0;
-
-      bloomAreaData.features.forEach(feature => {
-        const center = getFeatureBoundsCenter(feature);
-        const distance = getDistanceMeters(apiary.lat, apiary.lng, center.lat, center.lng);
-        if (distance <= forageRadiusMeters) {
-          const { rule, score } = getBloomProperties(feature);
-          const weight = Math.max(0.15, 1 - (distance / forageRadiusMeters));
-          weightedScoreSum += score * weight;
-          weightSum += weight;
-          overlaps.push({
-            name: feature.properties.name,
-            classLabel: rule.label,
-            score,
-            distanceMeters: distance
-          });
-        }
-      });
-
-      overlaps.sort((a, b) => a.distanceMeters - b.distanceMeters);
-
-      const averageScore = weightSum > 0 ? weightedScoreSum / weightSum : 0;
-      return {
-        averageScore,
-        overallLabel: scoreToLabel(averageScore),
-        overlapCount: overlaps.length,
-        topAreas: overlaps.slice(0, 3)
-      };
-    }
-
-    function renderBloomLayer() {
-      if (bloomLayer) map.removeLayer(bloomLayer);
-
-      bloomLayer = L.geoJSON(bloomAreaData, {
-        style: feature => {
-          const { score } = getBloomProperties(feature);
-          return { color: scoreToColor(score), weight: 1, fillColor: scoreToColor(score), fillOpacity: 0.28 };
-        },
-        onEachFeature: (feature, layer) => {
-          const { rule, score } = getBloomProperties(feature);
-          const seasonName = currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1);
-          layer.bindPopup(`
-            <div>
-              <div class="apiary-title">${feature.properties.name ?? 'Bloom area'}</div>
-              <div><strong>Land cover:</strong> ${rule.label}</div>
-              <div><strong>${seasonName} bloom potential:</strong> ${scoreToLabel(score)}</div>
-              <div><strong>Spring:</strong> ${scoreToLabel(rule.spring)}</div>
-              <div><strong>Summer:</strong> ${scoreToLabel(rule.summer)}</div>
-              <div><strong>Fall:</strong> ${scoreToLabel(rule.fall)}</div>
-              <div><strong>Overall:</strong> ${scoreToLabel(rule.overall)}</div>
-              <div><strong>Notes:</strong> ${feature.properties.notes ?? 'None'}</div>
-            </div>
-          `);
-        }
-      });
-
-      if (showBloomLayer) bloomLayer.addTo(map);
-      bloomLegend.style.display = showBloomLayer ? 'block' : 'none';
-    }
-
     function getMarkerColor(apiary) {
       return apiary.markerColor || statusColors[apiary.status] || '#8e24aa';
     }
@@ -274,7 +257,7 @@
     function createDivIcon(color) {
       return L.divIcon({
         className: 'custom-div-icon',
-        html: `<div class="marker-pin" style="background:${color}"></div>`,
+        html: '<div class="marker-pin" style="background:' + color + '"></div>',
         iconSize: [18, 18],
         iconAnchor: [9, 18],
         popupAnchor: [0, -18]
@@ -298,45 +281,141 @@
     function formatRadiusLabel(meters) {
       const km = meters / 1000;
       const miles = meters / 1609.34;
-      return `${km.toFixed(1)} km / ${miles.toFixed(1)} mi`;
+      return km.toFixed(1) + ' km / ' + miles.toFixed(1) + ' mi';
     }
 
-    function formatDistanceLabel(meters) {
-      const km = meters / 1000;
-      const miles = meters / 1609.34;
-      return `${km.toFixed(1)} km / ${miles.toFixed(1)} mi`;
+    function formatAreaLabel(sqKm) {
+      const acres = sqKm * 247.105;
+      return sqKm.toFixed(2) + ' km² / ' + acres.toFixed(0) + ' acres';
     }
 
-    function renderApiaries(apiaries) {
+    function summarizeBloomOverlap(apiary, forageRadiusMeters) {
+      const circle = turf.circle([apiary.lng, apiary.lat], forageRadiusMeters / 1000, {
+        steps: 96,
+        units: 'kilometers'
+      });
+
+      const overlaps = [];
+      let weightedScoreSum = 0;
+      let totalOverlapArea = 0;
+
+      bloomAreaData.features.forEach(feature => {
+        try {
+          const intersection = turf.intersect(circle, feature);
+          if (!intersection) return;
+
+          const overlapAreaSqKm = turf.area(intersection) / 1000000;
+          if (overlapAreaSqKm <= 0) return;
+
+          const rule = getRuleForFeature(feature);
+          const score = getScoreForFeature(feature);
+
+          totalOverlapArea += overlapAreaSqKm;
+          weightedScoreSum += score * overlapAreaSqKm;
+
+          overlaps.push({
+            name: feature.properties.name,
+            classLabel: rule.label,
+            score,
+            overlapAreaSqKm
+          });
+        } catch (err) {
+          console.warn('Skipping overlap calc for feature:', feature.properties && feature.properties.name, err);
+        }
+      });
+
+      overlaps.sort((a, b) => b.overlapAreaSqKm - a.overlapAreaSqKm);
+
+      const averageScore = totalOverlapArea > 0 ? weightedScoreSum / totalOverlapArea : 0;
+      return {
+        averageScore,
+        overallLabel: scoreToLabel(averageScore),
+        overlapCount: overlaps.length,
+        totalOverlapAreaSqKm: totalOverlapArea,
+        topAreas: overlaps.slice(0, 3)
+      };
+    }
+
+    function buildApiarySummaries() {
+      apiarySummaries = loadedApiaries
+        .filter(apiary => typeof apiary.lat === 'number' && typeof apiary.lng === 'number')
+        .map(apiary => {
+          const forageRadiusMeters = typeof apiary.forageRadiusMeters === 'number' ? apiary.forageRadiusMeters : currentForagePresetMeters;
+          const bloomSummary = summarizeBloomOverlap(apiary, forageRadiusMeters);
+          return { apiary, forageRadiusMeters, bloomSummary };
+        });
+    }
+
+    function populateOwnerFilter() {
+      const previous = ownerFilter.value;
+      const owners = [...new Set(loadedApiaries.map(a => a.owner).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      ownerFilter.innerHTML = '<option value="">All owners</option>' +
+        owners.map(owner => '<option value="' + owner + '">' + owner + '</option>').join('');
+      if (owners.includes(previous)) ownerFilter.value = previous;
+    }
+
+    function getFilteredSummaries() {
+      const q = searchInput.value.trim().toLowerCase();
+      const owner = ownerFilter.value;
+      const status = statusFilter.value;
+      const bloom = bloomFilter.value;
+      const minHives = minHivesFilter.value === '' ? null : Number(minHivesFilter.value);
+
+      return apiarySummaries.filter(({ apiary, bloomSummary }) => {
+        const haystack = [apiary.name || '', apiary.owner || '', apiary.notes || '', apiary.status || ''].join(' ').toLowerCase();
+        const matchesSearch = !q || haystack.includes(q);
+        const matchesOwner = !owner || apiary.owner === owner;
+        const matchesStatus = !status || apiary.status === status;
+        const matchesBloom = !bloom || bloomSummary.overallLabel === bloom;
+        const matchesMinHives = minHives === null || Number(apiary.hives || 0) >= minHives;
+        return matchesSearch && matchesOwner && matchesStatus && matchesBloom && matchesMinHives;
+      });
+    }
+
+    function closeMobileMenu() {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('open');
+        hamburgerBtn.setAttribute('aria-expanded', 'false');
+      }
+    }
+
+    function openMobileMenu() {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.add('open');
+        sidebarOverlay.classList.add('open');
+        hamburgerBtn.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    function renderFilteredApiaries() {
       clearMapAndList();
+      const filtered = getFilteredSummaries();
+      resultsCount.textContent = filtered.length + ' apiar' + (filtered.length === 1 ? 'y' : 'ies') + ' shown';
 
-      apiaries.forEach(apiary => {
-        if (typeof apiary.lat !== 'number' || typeof apiary.lng !== 'number') return;
-
+      filtered.forEach(({ apiary, forageRadiusMeters, bloomSummary }) => {
         const color = getMarkerColor(apiary);
-        const forageRadiusMeters = typeof apiary.forageRadiusMeters === 'number' ? apiary.forageRadiusMeters : currentForagePresetMeters;
-        const bloomSummary = summarizeBloomForApiary(apiary, forageRadiusMeters);
 
         const bloomTopHtml = bloomSummary.topAreas.length
           ? bloomSummary.topAreas.map(area =>
-              `<div>• ${area.name} (${area.classLabel}, ${scoreToLabel(area.score)}, ${formatDistanceLabel(area.distanceMeters)})</div>`
+              '<div>• ' + area.name + ' (' + area.classLabel + ', ' + scoreToLabel(area.score) + ', ' + formatAreaLabel(area.overlapAreaSqKm) + ')</div>'
             ).join('')
-          : '<div>No demo bloom areas inside this forage ring.</div>';
+          : '<div>No bloom-source polygons overlap this forage ring.</div>';
 
-        const popupHtml = `
-          <div>
-            <div class="apiary-title">${apiary.name ?? 'Unnamed Apiary'}</div>
-            <div><strong>Owner:</strong> ${apiary.owner ?? 'Unknown'}</div>
-            <div><strong>Hives:</strong> ${apiary.hives ?? 'N/A'}</div>
-            <div><strong>Status:</strong> ${apiary.status ?? 'Unknown'}</div>
-            <div><strong>Forage radius:</strong> ${formatRadiusLabel(forageRadiusMeters)}</div>
-            <div><strong>${currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} bloom in ring:</strong> ${bloomSummary.overallLabel}</div>
-            <div><strong>Matched bloom areas:</strong> ${bloomSummary.overlapCount}</div>
-            <div style="margin-top:8px;"><strong>Nearest bloom areas:</strong></div>
-            <div>${bloomTopHtml}</div>
-            <div style="margin-top:8px;"><strong>Notes:</strong> ${apiary.notes ?? 'None'}</div>
-          </div>
-        `;
+        const popupHtml =
+          '<div>' +
+            '<div class="apiary-title">' + (apiary.name || 'Unnamed Apiary') + '</div>' +
+            '<div><strong>Owner:</strong> ' + (apiary.owner || 'Unknown') + '</div>' +
+            '<div><strong>Hives:</strong> ' + (apiary.hives ?? 'N/A') + '</div>' +
+            '<div><strong>Status:</strong> ' + (apiary.status || 'Unknown') + '</div>' +
+            '<div><strong>Forage radius:</strong> ' + formatRadiusLabel(forageRadiusMeters) + '</div>' +
+            '<div><strong>' + currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1) + ' bloom in ring:</strong> ' + bloomSummary.overallLabel + '</div>' +
+            '<div><strong>Overlapping bloom areas:</strong> ' + bloomSummary.overlapCount + '</div>' +
+            '<div><strong>Total overlap:</strong> ' + formatAreaLabel(bloomSummary.totalOverlapAreaSqKm) + '</div>' +
+            '<div style="margin-top:8px;"><strong>Largest overlaps:</strong></div>' +
+            '<div>' + bloomTopHtml + '</div>' +
+            '<div style="margin-top:8px;"><strong>Notes:</strong> ' + (apiary.notes || 'None') + '</div>' +
+          '</div>';
 
         const forageCircle = L.circle([apiary.lat, apiary.lng], {
           radius: forageRadiusMeters,
@@ -357,26 +436,23 @@
 
         const card = document.createElement('div');
         card.className = 'apiary-card';
-        card.innerHTML = `
-          <div class="apiary-card-header">
-            <div class="apiary-name">${apiary.name ?? 'Unnamed Apiary'}</div>
-            <div class="status-pill">
-              <span class="dot" style="background:${color}"></span>
-              <span>${apiary.status ?? 'Unknown'}</span>
-            </div>
-          </div>
-          <div class="apiary-meta">
-            <div><strong>Owner:</strong> ${apiary.owner ?? 'Unknown'}</div>
-            <div><strong>Hives:</strong> ${apiary.hives ?? 'N/A'}</div>
-            <div><strong>Forage:</strong> ${formatRadiusLabel(forageRadiusMeters)}</div>
-            <div>${apiary.notes ?? ''}</div>
-          </div>
-          <div class="apiary-submeta">
-            <div><strong>${currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} bloom in ring:</strong> ${bloomSummary.overallLabel}</div>
-            <div><strong>Matched areas:</strong> ${bloomSummary.overlapCount}</div>
-            <div><strong>Nearest area:</strong> ${bloomSummary.topAreas[0] ? bloomSummary.topAreas[0].name : 'None'}</div>
-          </div>
-        `;
+        card.innerHTML =
+          '<div class="apiary-card-header">' +
+            '<div class="apiary-name">' + (apiary.name || 'Unnamed Apiary') + '</div>' +
+            '<div class="status-pill"><span class="dot" style="background:' + color + '"></span><span>' + (apiary.status || 'Unknown') + '</span></div>' +
+          '</div>' +
+          '<div class="apiary-meta">' +
+            '<div><strong>Owner:</strong> ' + (apiary.owner || 'Unknown') + '</div>' +
+            '<div><strong>Hives:</strong> ' + (apiary.hives ?? 'N/A') + '</div>' +
+            '<div><strong>Forage:</strong> ' + formatRadiusLabel(forageRadiusMeters) + '</div>' +
+            '<div>' + (apiary.notes || '') + '</div>' +
+          '</div>' +
+          '<div class="apiary-submeta">' +
+            '<div><strong>' + currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1) + ' bloom in ring:</strong> ' + bloomSummary.overallLabel + '</div>' +
+            '<div><strong>Overlap count:</strong> ' + bloomSummary.overlapCount + '</div>' +
+            '<div><strong>Total overlap:</strong> ' + formatAreaLabel(bloomSummary.totalOverlapAreaSqKm) + '</div>' +
+            '<div><strong>Largest overlap:</strong> ' + (bloomSummary.topAreas[0] ? bloomSummary.topAreas[0].name : 'None') + '</div>' +
+          '</div>';
 
         card.addEventListener('click', () => {
           const selectedMarker = markerMap.get(apiary.id);
@@ -384,6 +460,7 @@
           map.setView([apiary.lat, apiary.lng], 14, { animate: true });
           selectedMarker.openPopup();
           setActiveCard(apiary.id);
+          closeMobileMenu();
         });
 
         listContainer.appendChild(card);
@@ -393,7 +470,6 @@
       const boundsLayers = [];
       if (markers.length > 0) boundsLayers.push(...markers);
       if (showForageRings && forageCircles.length > 0) boundsLayers.push(...forageCircles);
-      if (showBloomLayer && bloomLayer) boundsLayers.push(bloomLayer);
 
       if (boundsLayers.length > 0) {
         const featureGroup = L.featureGroup(boundsLayers);
@@ -402,53 +478,81 @@
     }
 
     function showError(message) {
-      listContainer.innerHTML = `
-        <div class="apiary-card">
-          <div class="apiary-name">Unable to load apiaries</div>
-          <div class="apiary-meta" style="margin-top: 8px;">${message}</div>
-        </div>
-      `;
+      listContainer.innerHTML =
+        '<div class="apiary-card">' +
+          '<div class="apiary-name">Unable to load apiaries</div>' +
+          '<div class="apiary-meta" style="margin-top: 8px;">' + message + '</div>' +
+        '</div>';
+      resultsCount.textContent = '';
+    }
+
+    function refreshView() {
+      buildApiarySummaries();
+      renderFilteredApiaries();
     }
 
     async function loadApiaries() {
       try {
         const response = await fetch('./apiaries.json');
-        if (!response.ok) throw new Error(`HTTP ${response.status} while loading apiaries.json`);
+        if (!response.ok) throw new Error('HTTP ' + response.status + ' while loading apiaries.json');
         const apiaries = await response.json();
         if (!Array.isArray(apiaries)) throw new Error('apiaries.json must contain a JSON array.');
         loadedApiaries = apiaries;
-        renderBloomLayer();
-        renderApiaries(loadedApiaries);
+        populateOwnerFilter();
+        refreshView();
       } catch (error) {
         console.error('Failed to load apiaries.json:', error);
-        renderBloomLayer();
         showError('Check that apiaries.json is in the same folder as index.html and contains a valid JSON array.');
       }
     }
 
     foragePresetSelect.addEventListener('change', () => {
       currentForagePresetMeters = Number(foragePresetSelect.value);
-      renderApiaries(loadedApiaries);
+      refreshView();
     });
 
     showForageRingsCheckbox.addEventListener('change', () => {
       showForageRings = showForageRingsCheckbox.checked;
-      renderApiaries(loadedApiaries);
-    });
-
-    showBloomLayerCheckbox.addEventListener('change', () => {
-      showBloomLayer = showBloomLayerCheckbox.checked;
-      renderBloomLayer();
-      renderApiaries(loadedApiaries);
+      renderFilteredApiaries();
     });
 
     seasonSelect.addEventListener('change', () => {
       currentSeason = seasonSelect.value;
-      renderBloomLayer();
-      renderApiaries(loadedApiaries);
+      refreshView();
+    });
+
+    [searchInput, ownerFilter, statusFilter, bloomFilter, minHivesFilter].forEach(el => {
+      el.addEventListener('input', renderFilteredApiaries);
+      el.addEventListener('change', renderFilteredApiaries);
+    });
+
+    resetFiltersBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      ownerFilter.value = '';
+      statusFilter.value = '';
+      bloomFilter.value = '';
+      minHivesFilter.value = '';
+      renderFilteredApiaries();
+    });
+
+    hamburgerBtn.addEventListener('click', () => {
+      const isOpen = sidebar.classList.contains('open');
+      if (isOpen) closeMobileMenu();
+      else openMobileMenu();
+    });
+
+    sidebarOverlay.addEventListener('click', closeMobileMenu);
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 900) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('open');
+        hamburgerBtn.setAttribute('aria-expanded', 'false');
+      }
     });
 
     loadApiaries();
   </script>
 </body>
 </html>
+
