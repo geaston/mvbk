@@ -582,6 +582,10 @@
       const bloom = bloomFilter.value;
       const type = typeFilter.value;
       const minHives = minHivesFilter.value === '' ? null : Number(minHivesFilter.value);
+      const treated = treatedFilter.value;
+      const inspected = inspectedFilter.value;
+      const miteThreshold = miteThresholdFilter.value === '' ? null : Number(miteThresholdFilter.value);
+      const miteBiter = miteBiterFilter.value;
 
       return apiarySummaries.filter(({ apiary, bloomSummary }) => {
         const haystack = [apiary.name || '', apiary.owner || '', apiary.notes || '', apiary.status || '', apiary.type || ''].join(' ').toLowerCase();
@@ -591,7 +595,11 @@
         const matchesBloom = !bloom || bloomSummary.overallLabel === bloom;
         const matchesType = !type || apiary.type === type;
         const matchesMinHives = minHives === null || Number(apiary.hives || 0) >= minHives;
-        return matchesSearch && matchesOwner && matchesStatus && matchesBloom && matchesType && matchesMinHives;
+        const matchesTreated = !treated || (treated === 'yes' ? apiary.treated === true : apiary.treated === false);
+        const matchesInspected = !inspected || (inspected === 'yes' ? apiary.nysInspected === true : apiary.nysInspected === false);
+        const matchesMiteThreshold = miteThreshold === null || Number(apiary.miteCount ?? -1) >= miteThreshold;
+        const matchesMiteBiter = !miteBiter || (miteBiter === 'yes' ? apiary.miteBiter === true : apiary.miteBiter === false);
+        return matchesSearch && matchesOwner && matchesStatus && matchesBloom && matchesType && matchesMinHives && matchesTreated && matchesInspected && matchesMiteThreshold && matchesMiteBiter;
       });
     }
 
@@ -877,7 +885,7 @@
       renderFilteredApiaries();
     });
 
-    [searchInput, ownerFilter, statusFilter, bloomFilter, typeFilter, minHivesFilter].forEach(el => {
+    [searchInput, ownerFilter, statusFilter, bloomFilter, typeFilter, minHivesFilter, treatedFilter, inspectedFilter, miteThresholdFilter, miteBiterFilter].forEach(el => {
       el.addEventListener('input', renderFilteredApiaries);
       el.addEventListener('change', renderFilteredApiaries);
     });
@@ -889,6 +897,10 @@
       bloomFilter.value = '';
       typeFilter.value = '';
       minHivesFilter.value = '';
+      treatedFilter.value = '';
+      inspectedFilter.value = '';
+      miteThresholdFilter.value = '';
+      miteBiterFilter.value = '';
       dcaFilter.value = '';
       renderDcaLayer();
       renderFilteredApiaries();
