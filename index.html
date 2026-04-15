@@ -449,6 +449,10 @@
       return sqKm.toFixed(2) + ' km² / ' + acres.toFixed(0) + ' acres';
     }
 
+    function getRingAreaSqKm(radiusMeters) {
+      return Math.PI * Math.pow(radiusMeters / 1000, 2);
+    }
+
 
     function scoreToColor(score) {
       if (score >= 3) return '#2e7d32';
@@ -485,7 +489,7 @@
           const seasonName = currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1);
           layer.bindPopup(
             '<div>' +
-              '<div class="apiary-title">' + (feature.properties.name || 'Bloom area') + '</div>' +
+              '<div class="apiary-title">' + ((feature.properties.name || feature.properties.forage_type || feature.properties.landcover || 'Bloom area')) + '</div>' +
               '<div><strong>Forage type:</strong> ' + rule.label + '</div>' +
               '<div><strong>' + seasonName + ' bloom potential:</strong> ' + scoreToLabel(score) + '</div>' +
               '<div><strong>Bee score:</strong> ' + ((feature.properties && feature.properties.bee_score != null) ? feature.properties.bee_score : 'N/A') + '</div>' +
@@ -504,10 +508,11 @@
       });
 
       const overlaps = [];
+      const typeBuckets = {};
       let weightedScoreSum = 0;
       let totalOverlapArea = 0;
 
-      bloomAreaData.features.forEach(feature => {
+      forageGeojson.features.forEach(feature => {
         try {
           const intersection = turf.intersect(circle, feature);
           if (!intersection) return;
@@ -517,22 +522,40 @@
 
           const rule = getRuleForFeature(feature);
           const score = getScoreForFeature(feature);
+          const typeLabel = feature.properties.name || feature.properties.forage_type || feature.properties.landcover || 'Unnamed bloom area';
 
           totalOverlapArea += overlapAreaSqKm;
           weightedScoreSum += score * overlapAreaSqKm;
 
           overlaps.push({
-            name: feature.properties.name,
+            name: typeLabel,
             classLabel: rule.label,
             score,
             overlapAreaSqKm
           });
+
+          if (!typeBuckets[typeLabel]) {
+            typeBuckets[typeLabel] = {
+              typeLabel,
+              score,
+              totalAreaSqKm: 0
+            };
+          }
+          typeBuckets[typeLabel].totalAreaSqKm += overlapAreaSqKm;
         } catch (err) {
-          console.warn('Skipping overlap calc for feature:', feature.properties && feature.properties.name, err);
+          console.warn('Skipping overlap calc for feature:', feature.properties && (feature.properties.name || feature.properties.forage_type), err);
         }
       });
 
       overlaps.sort((a, b) => b.overlapAreaSqKm - a.overlapAreaSqKm);
+
+      const ringAreaSqKm = getRingAreaSqKm(forageRadiusMeters);
+      const groupedTypes = Object.values(typeBuckets)
+        .map(bucket => ({
+          ...bucket,
+          percentOfRing: ringAreaSqKm > 0 ? (bucket.totalAreaSqKm / ringAreaSqKm) * 100 : 0
+        }))
+        .sort((a, b) => b.percentOfRing - a.percentOfRing);
 
       const averageScore = totalOverlapArea > 0 ? weightedScoreSum / totalOverlapArea : 0;
       return {
@@ -540,7 +563,9 @@
         overallLabel: scoreToLabel(averageScore),
         overlapCount: overlaps.length,
         totalOverlapAreaSqKm: totalOverlapArea,
-        topAreas: overlaps.slice(0, 3)
+        ringAreaSqKm,
+        topAreas: overlaps.slice(0, 3),
+        groupedTypes: groupedTypes.slice(0, 6)
       };
     }
 
@@ -676,9 +701,9 @@
         const color = getMarkerColor(apiary);
         const nearestDca = getNearestDca(apiary);
 
-        const bloomTopHtml = bloomSummary.topAreas.length
-          ? bloomSummary.topAreas.map(area =>
-              '<div>• ' + area.name + ' (' + area.classLabel + ', ' + scoreToLabel(area.score) + ', ' + formatAreaLabel(area.overlapAreaSqKm) + ')</div>'
+        const bloomTopHtml = bloomSummary.groupedTypes.length
+          ? bloomSummary.groupedTypes.map(areaType =>
+              '<div>• ' + areaType.typeLabel + ' (' + scoreToLabel(areaType.score) + ', ' + areaType.percentOfRing.toFixed(1) + '% of ring, ' + formatAreaLabel(areaType.totalAreaSqKm) + ')</div>'
             ).join('')
           : '<div>No bloom-source polygons overlap this forage ring.</div>';
 
@@ -699,7 +724,7 @@
             '<div><strong>Overlapping bloom areas:</strong> ' + bloomSummary.overlapCount + '</div>' +
             '<div><strong>Total overlap:</strong> ' + formatAreaLabel(bloomSummary.totalOverlapAreaSqKm) + '</div>' +
             '<div><strong>Nearest candidate DCA:</strong> ' + (nearestDca ? nearestDca.name + ' (' + (nearestDca.distanceMeters / 1000).toFixed(1) + ' km)' : 'None') + '</div>' +
-            '<div style="margin-top:8px;"><strong>Largest overlaps:</strong></div>' +
+            '<div style="margin-top:8px;"><strong>Forage ring by type:</strong></div>' +
             '<div>' + bloomTopHtml + '</div>' +
             '<div style="margin-top:8px;"><strong>Notes:</strong> ' + (apiary.notes || 'None') + '</div>' +
           '</div>';
