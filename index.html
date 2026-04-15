@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MVBK Apiary Map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" crossorigin="" />
   <style>
     html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; }
     body { overflow: hidden; }
@@ -125,6 +126,19 @@
         <div class="legend-row"><span class="legend-swatch" style="background:#f9a825;"></span> Medium bloom potential</div>
         <div class="legend-row"><span class="legend-swatch" style="background:#9e9e9e;"></span> Low bloom potential</div>
         <div class="legend-row"><span class="legend-swatch" style="background:#d32f2f;"></span> Poor bloom potential</div>
+      </div>
+
+      <div class="section-title">User bloom polygons</div>
+      <div class="control-block">
+        <div class="small-note">Use the draw toolbar on the map to sketch a polygon, then enter bloom type and bee score. Added polygons affect both the overlay and forage scoring.</div>
+      </div>
+      <div class="filter-grid">
+        <div class="control-block">
+          <button id="exportUserPolygonsBtn" class="btn" type="button">Export added polygons</button>
+        </div>
+        <div class="control-block">
+          <button id="clearUserPolygonsBtn" class="btn" type="button">Clear added polygons</button>
+        </div>
       </div>
 
       <div class="section-title">Drone congregation areas</div>
@@ -283,6 +297,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js" crossorigin=""></script>
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <script>
     const mapCenter = [42.69, -74.40];
@@ -300,7 +315,33 @@
     satellite.addTo(map);
     L.control.layers({ "Street Map": streets, "Satellite": satellite }).addTo(map);
 
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    const drawControl = new L.Control.Draw({
+      edit: {
+        featureGroup: drawnItems,
+        edit: true,
+        remove: true
+      },
+      draw: {
+        polygon: {
+          allowIntersection: false,
+          showArea: true
+        },
+        polyline: false,
+        rectangle: false,
+        circle: false,
+        marker: false,
+        circlemarker: false
+      }
+    });
+    map.addControl(drawControl);
+
     let bloomAreaData = { type: 'FeatureCollection', features: [] };
+    let baseBloomFeatures = [];
+    let userAddedFeatures = [];
+    const userBloomStorageKey = 'mvbk_user_bloom_polygons_v1';
     const bloomGeoJsonPath = './cobleskill_bee_forage_clean.geojson';
 
     const dcaHotspots = [
@@ -366,6 +407,8 @@
     const showMiteBiterInfluenceCheckbox = document.getElementById('showMiteBiterInfluence');
     const miteBiterInfluenceRadiusSelect = document.getElementById('miteBiterInfluenceRadius');
     const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    const exportUserPolygonsBtn = document.getElementById('exportUserPolygonsBtn');
+    const clearUserPolygonsBtn = document.getElementById('clearUserPolygonsBtn');
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
     const hamburgerBtn = document.getElementById('hamburgerBtn');
@@ -457,6 +500,110 @@
     }
 
 
+
+    function rebuildBloomAreaData() {
+      bloomAreaData = {
+        type: 'FeatureCollection',
+        features: [...baseBloomFeatures, ...userAddedFeatures]
+      };
+    }
+
+    function saveUserFeaturesToStorage() {
+      try {
+        localStorage.setItem(userBloomStorageKey, JSON.stringify(userAddedFeatures));
+      } catch (error) {
+        console.warn('Unable to save user polygons:', error);
+      }
+    }
+
+    function loadUserFeaturesFromStorage() {
+      try {
+        const raw = localStorage.getItem(userBloomStorageKey);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        console.warn('Unable to load user polygons:', error);
+        return [];
+      }
+    }
+
+    function promptForPolygonProperties() {
+      const forageType = window.prompt('Enter forage type for this polygon:', 'old field');
+      if (forageType === null) return null;
+
+      const beeScoreInput = window.prompt('Enter bee score for this polygon (for example 1, 2, or 3):', '2');
+      if (beeScoreInput === null) return null;
+      const beeScore = Number(beeScoreInput);
+      if (!Number.isFinite(beeScore)) {
+        window.alert('Bee score must be a number.');
+        return null;
+      }
+
+      const areaName = window.prompt('Optional name for this polygon:', forageType) || forageType;
+      const notes = window.prompt('Optional notes:', '') || '';
+
+      return {
+        name: areaName,
+        forage_type: forageType,
+        bee_score: beeScore,
+        notes: notes,
+        source: 'user_added',
+        _drawId: 'draw_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8)
+      };
+    }
+
+    function bindUserPolygonPopup(layer) {
+      const props = (layer.feature && layer.feature.properties) || {};
+      layer.bindPopup(
+        '<div>' +
+          '<div class="apiary-title">' + (props.name || props.forage_type || 'User bloom polygon') + '</div>' +
+          '<div><strong>Forage type:</strong> ' + (props.forage_type || 'Unknown') + '</div>' +
+          '<div><strong>Bee score:</strong> ' + (props.bee_score != null ? props.bee_score : 'N/A') + '</div>' +
+          '<div><strong>Notes:</strong> ' + (props.notes || 'None') + '</div>' +
+        '</div>'
+      );
+    }
+
+    function syncUserFeaturesFromDrawnItems() {
+      userAddedFeatures = [];
+      drawnItems.eachLayer(layer => {
+        const feature = layer.toGeoJSON();
+        feature.properties = {
+          ...(layer.feature && layer.feature.properties ? layer.feature.properties : {}),
+          source: 'user_added'
+        };
+        layer.feature = feature;
+        bindUserPolygonPopup(layer);
+        userAddedFeatures.push(feature);
+      });
+      saveUserFeaturesToStorage();
+      rebuildBloomAreaData();
+    }
+
+    function loadUserFeaturesIntoDrawnItems() {
+      drawnItems.clearLayers();
+      userAddedFeatures.forEach(feature => {
+        const layer = L.geoJSON(feature).getLayers()[0];
+        layer.feature = feature;
+        bindUserPolygonPopup(layer);
+        drawnItems.addLayer(layer);
+      });
+    }
+
+    function exportUserPolygons() {
+      const featureCollection = { type: 'FeatureCollection', features: userAddedFeatures };
+      const blob = new Blob([JSON.stringify(featureCollection, null, 2)], { type: 'application/geo+json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'user_added_bloom_polygons.geojson';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
     function scoreToColor(score) {
       if (score >= 3) return '#2e7d32';
       if (score >= 2) return '#f9a825';
@@ -475,7 +622,7 @@
       clearBloomPolygonLayer();
       if (!showBloomPolygons) return;
 
-      bloomPolygonLayer = L.geoJSON(bloomAreaData, {
+      bloomPolygonLayer = L.geoJSON({ type: 'FeatureCollection', features: baseBloomFeatures }, {
         style: feature => {
           const score = getScoreForFeature(feature);
           const color = scoreToColor(score);
@@ -885,7 +1032,10 @@
         }
 
         loadedApiaries = apiaries;
-        bloomAreaData = bloomGeoJson;
+        baseBloomFeatures = Array.isArray(bloomGeoJson.features) ? bloomGeoJson.features : [];
+        userAddedFeatures = loadUserFeaturesFromStorage();
+        rebuildBloomAreaData();
+        loadUserFeaturesIntoDrawnItems();
         populateOwnerFilter();
         refreshView();
       } catch (error) {
@@ -976,7 +1126,45 @@
       }
     });
 
-    loadData();
+
+    map.on(L.Draw.Event.CREATED, event => {
+      const layer = event.layer;
+      const properties = promptForPolygonProperties();
+      if (!properties) return;
+      const feature = layer.toGeoJSON();
+      feature.properties = properties;
+      layer.feature = feature;
+      bindUserPolygonPopup(layer);
+      drawnItems.addLayer(layer);
+      syncUserFeaturesFromDrawnItems();
+      refreshView();
+    });
+
+    map.on(L.Draw.Event.EDITED, () => {
+      syncUserFeaturesFromDrawnItems();
+      refreshView();
+    });
+
+    map.on(L.Draw.Event.DELETED, () => {
+      syncUserFeaturesFromDrawnItems();
+      refreshView();
+    });
+
+    exportUserPolygonsBtn.addEventListener('click', () => {
+      exportUserPolygons();
+    });
+
+    clearUserPolygonsBtn.addEventListener('click', () => {
+      if (!window.confirm('Clear all user-added bloom polygons from this browser?')) return;
+      userAddedFeatures = [];
+      drawnItems.clearLayers();
+      saveUserFeaturesToStorage();
+      rebuildBloomAreaData();
+      refreshView();
+    });
+
+
+        loadData();
   </script>
 </body>
 </html>
