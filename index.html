@@ -297,19 +297,8 @@
     satellite.addTo(map);
     L.control.layers({ "Street Map": streets, "Satellite": satellite }).addTo(map);
 
-    const bloomAreaData = {
-      "type": "FeatureCollection",
-      "features": [
-        {"type":"Feature","properties":{"name":"Esperance Brushy Field","landCoverClass":"shrub_scrub","notes":"Old field with brushy regrowth and edge habitat."},"geometry":{"type":"Polygon","coordinates":[[[-74.280,42.782],[-74.256,42.782],[-74.256,42.767],[-74.280,42.767],[-74.280,42.782]]]}},
-        {"type":"Feature","properties":{"name":"Central Bridge Hedgerow Block","landCoverClass":"pasture_hay","notes":"Open field margin and adjacent hay ground."},"geometry":{"type":"Polygon","coordinates":[[[-74.360,42.755],[-74.330,42.755],[-74.330,42.739],[-74.360,42.739],[-74.360,42.755]]]}},
-        {"type":"Feature","properties":{"name":"Schoharie Valley Cropland","landCoverClass":"cultivated_crops","notes":"Large agricultural block; bloom value depends on crop and margins."},"geometry":{"type":"Polygon","coordinates":[[[-74.340,42.681],[-74.290,42.681],[-74.290,42.648],[-74.340,42.648],[-74.340,42.681]]]}},
-        {"type":"Feature","properties":{"name":"Middleburgh Forest Edge","landCoverClass":"forest_edge","notes":"Woodland edge with openings and shrubby transition."},"geometry":{"type":"Polygon","coordinates":[[[-74.372,42.622],[-74.332,42.622],[-74.332,42.594],[-74.372,42.594],[-74.372,42.622]]]}},
-        {"type":"Feature","properties":{"name":"Breakabeen Wet Edge","landCoverClass":"wetland_edge","notes":"Wet edge habitat with spring pollen potential."},"geometry":{"type":"Polygon","coordinates":[[[-74.448,42.544],[-74.416,42.544],[-74.416,42.522],[-74.448,42.522],[-74.448,42.544]]]}},
-        {"type":"Feature","properties":{"name":"Cobleskill Orchard Margin","landCoverClass":"orchard_edge","notes":"Pollination-adjacent perennial edge habitat."},"geometry":{"type":"Polygon","coordinates":[[[-74.515,42.700],[-74.470,42.700],[-74.470,42.670],[-74.515,42.670],[-74.515,42.700]]]}},
-        {"type":"Feature","properties":{"name":"Jefferson Closed Forest","landCoverClass":"forest_interior","notes":"Dense interior woodland with limited understory bloom."},"geometry":{"type":"Polygon","coordinates":[[[-74.645,42.505],[-74.590,42.505],[-74.590,42.463],[-74.645,42.463],[-74.645,42.505]]]}},
-        {"type":"Feature","properties":{"name":"Richmondville Grassland","landCoverClass":"grassland_herbaceous","notes":"Open grass-herbaceous block with meadow potential."},"geometry":{"type":"Polygon","coordinates":[[[-74.595,42.664],[-74.546,42.664],[-74.546,42.628],[-74.595,42.628],[-74.595,42.664]]]}}
-      ]
-    };
+    let bloomAreaData = { type: 'FeatureCollection', features: [] };
+    const bloomGeoJsonPath = './cobleskill_bee_forage_clean.geojson';
 
     const dcaHotspots = [
       { id: 'dca-1', name: 'Esperance Ridge Gap', lat: 42.774, lng: -74.262, confidence: 'high', terrainCue: 'ridge gap / open saddle', notes: 'Open gap between wooded edges with room for drone flight loops.' },
@@ -389,11 +378,22 @@
     let apiarySummaries = [];
 
     function getRuleForFeature(feature) {
-      const landCoverClass = feature.properties.landCoverClass;
-      return bloomScoringRules[landCoverClass] || { spring: 0, summer: 0, fall: 0, overall: 0, label: landCoverClass };
+      const props = feature.properties || {};
+      if (typeof props.bee_score === 'number') {
+        const raw = props.bee_score;
+        const clamped = Math.max(0, Math.min(3, raw));
+        const label = props.forage_type || props.landCoverClass || 'forage area';
+        return { spring: clamped, summer: clamped, fall: clamped, overall: clamped, label: label };
+      }
+      const landCoverClass = props.landCoverClass;
+      return bloomScoringRules[landCoverClass] || { spring: 0, summer: 0, fall: 0, overall: 0, label: landCoverClass || 'unknown' };
     }
 
     function getScoreForFeature(feature) {
+      const props = feature.properties || {};
+      if (typeof props.bee_score === 'number') {
+        return Math.max(0, Math.min(3, props.bee_score));
+      }
       const rule = getRuleForFeature(feature);
       return rule[currentSeason] ?? rule.overall ?? 0;
     }
@@ -486,9 +486,11 @@
           layer.bindPopup(
             '<div>' +
               '<div class="apiary-title">' + (feature.properties.name || 'Bloom area') + '</div>' +
-              '<div><strong>Land cover:</strong> ' + rule.label + '</div>' +
+              '<div><strong>Forage type:</strong> ' + rule.label + '</div>' +
               '<div><strong>' + seasonName + ' bloom potential:</strong> ' + scoreToLabel(score) + '</div>' +
-              '<div><strong>Notes:</strong> ' + (feature.properties.notes || 'None') + '</div>' +
+              '<div><strong>Bee score:</strong> ' + ((feature.properties && feature.properties.bee_score != null) ? feature.properties.bee_score : 'N/A') + '</div>' +
+              '<div><strong>Name:</strong> ' + ((feature.properties && feature.properties.name) || 'Unnamed') + '</div>' +
+              '<div><strong>Notes:</strong> ' + ((feature.properties && feature.properties.notes) || 'None') + '</div>' +
             '</div>'
           );
         }
@@ -828,18 +830,31 @@
       renderFilteredApiaries();
     }
 
-    async function loadApiaries() {
+    async function loadData() {
       try {
-        const response = await fetch('./apiaries.json');
-        if (!response.ok) throw new Error('HTTP ' + response.status + ' while loading apiaries.json');
-        const apiaries = await response.json();
+        const [apiaryResponse, bloomResponse] = await Promise.all([
+          fetch('./apiaries.json'),
+          fetch(bloomGeoJsonPath)
+        ]);
+
+        if (!apiaryResponse.ok) throw new Error('HTTP ' + apiaryResponse.status + ' while loading apiaries.json');
+        if (!bloomResponse.ok) throw new Error('HTTP ' + bloomResponse.status + ' while loading ' + bloomGeoJsonPath);
+
+        const apiaries = await apiaryResponse.json();
+        const bloomGeoJson = await bloomResponse.json();
+
         if (!Array.isArray(apiaries)) throw new Error('apiaries.json must contain a JSON array.');
+        if (!bloomGeoJson || bloomGeoJson.type !== 'FeatureCollection' || !Array.isArray(bloomGeoJson.features)) {
+          throw new Error('Bloom GeoJSON must be a FeatureCollection.');
+        }
+
         loadedApiaries = apiaries;
+        bloomAreaData = bloomGeoJson;
         populateOwnerFilter();
         refreshView();
       } catch (error) {
-        console.error('Failed to load apiaries.json:', error);
-        showError('Check that apiaries.json is in the same folder as index.html and contains a valid JSON array.');
+        console.error('Failed to load map data:', error);
+        showError('Check that apiaries.json and cobleskill_bee_forage_clean.geojson are in the same folder as index.html.');
       }
     }
 
@@ -925,7 +940,7 @@
       }
     });
 
-    loadApiaries();
+    loadData();
   </script>
 </body>
 </html>
