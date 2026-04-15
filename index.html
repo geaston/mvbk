@@ -515,7 +515,7 @@
       let weightedScoreSum = 0;
       let totalOverlapArea = 0;
 
-      forageGeojson.features.forEach(feature => {
+      bloomAreaData.features.forEach(feature => {
         try {
           const intersection = turf.intersect(circle, feature);
           if (!intersection) return;
