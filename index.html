@@ -210,6 +210,13 @@
         </div>
       </div>
 
+      <div class="control-block">
+        <label for="countyFilter" class="control-label">County</label>
+        <select id="countyFilter">
+          <option value="">All counties</option>
+        </select>
+      </div>
+
       <div class="filter-grid">
         <div class="control-block">
           <label for="bloomFilter" class="control-label">Bloom in ring</label>
@@ -396,6 +403,7 @@
     const searchInput = document.getElementById('searchInput');
     const ownerFilter = document.getElementById('ownerFilter');
     const statusFilter = document.getElementById('statusFilter');
+    const countyFilter = document.getElementById('countyFilter');
     const bloomFilter = document.getElementById('bloomFilter');
     const typeFilter = document.getElementById('typeFilter');
     const minHivesFilter = document.getElementById('minHivesFilter');
@@ -774,10 +782,21 @@
       if (owners.includes(previous)) ownerFilter.value = previous;
     }
 
+    function populateCountyFilter() {
+      const previous = countyFilter.value;
+      const counties = [...new Set(loadedApiaries.map(a => getCountyNameForApiary(a)).filter(Boolean).filter(c => c !== 'Unknown'))]
+        .sort((a, b) => a.localeCompare(b));
+      countyFilter.innerHTML = '<option value="">All counties</option>' +
+        counties.map(county => '<option value="' + county + '">' + county + '</option>').join('');
+      if (counties.includes(previous)) countyFilter.value = previous;
+    }
+
+
     function getFilteredSummaries() {
       const q = searchInput.value.trim().toLowerCase();
       const owner = ownerFilter.value;
       const status = statusFilter.value;
+      const county = countyFilter.value;
       const bloom = bloomFilter.value;
       const type = typeFilter.value;
       const minHives = minHivesFilter.value === '' ? null : Number(minHivesFilter.value);
@@ -791,6 +810,7 @@
         const matchesSearch = !q || haystack.includes(q);
         const matchesOwner = !owner || apiary.owner === owner;
         const matchesStatus = !status || apiary.status === status;
+        const matchesCounty = !county || getCountyNameForApiary(apiary) === county;
         const matchesBloom = !bloom || bloomSummary.overallLabel === bloom;
         const matchesType = !type || apiary.type === type;
         const matchesMinHives = minHives === null || Number(apiary.hives || 0) >= minHives;
@@ -798,7 +818,7 @@
         const matchesInspected = !inspected || (inspected === 'yes' ? apiary.nysInspected === true : apiary.nysInspected === false);
         const matchesMiteThreshold = miteThreshold === null || Number(apiary.miteCount ?? -1) >= miteThreshold;
         const matchesMiteBiter = !miteBiter || (miteBiter === 'yes' ? apiary.miteBiter === true : apiary.miteBiter === false);
-        return matchesSearch && matchesOwner && matchesStatus && matchesBloom && matchesType && matchesMinHives && matchesTreated && matchesInspected && matchesMiteThreshold && matchesMiteBiter;
+        return matchesSearch && matchesOwner && matchesStatus && matchesCounty && matchesBloom && matchesType && matchesMinHives && matchesTreated && matchesInspected && matchesMiteThreshold && matchesMiteBiter;
       });
     }
 
@@ -848,6 +868,23 @@
       return best;
     }
 
+    function getCountyNameForApiary(apiary) {
+      if (!countiesGeoData || !Array.isArray(countiesGeoData.features)) return 'Unknown';
+      const pt = turf.point([apiary.lng, apiary.lat]);
+
+      for (const feature of countiesGeoData.features) {
+        try {
+          if (turf.booleanPointInPolygon(pt, feature)) {
+            return (feature.properties && (feature.properties.NAME || feature.properties.name || feature.properties.county || feature.properties.County)) || 'Unknown';
+          }
+        } catch (err) {
+          console.warn('County lookup failed for feature', err);
+        }
+      }
+      return 'Unknown';
+    }
+
+
     function closeMobileMenu() {
       if (window.innerWidth <= 900) {
         sidebar.classList.remove('open');
@@ -891,6 +928,8 @@
           '<div>' +
             '<div class="apiary-title">' + (apiary.name || 'Unnamed Apiary') + '</div>' +
             '<div><strong>Owner:</strong> ' + (apiary.owner || 'Unknown') + '</div>' +
+            '<div><strong>County:</strong> ' + getCountyNameForApiary(apiary) + '</div>' +
+            '<div><strong>County:</strong> ' + getCountyNameForApiary(apiary) + '</div>' +
             '<div><strong>Hives:</strong> ' + (apiary.hives ?? 'N/A') + '</div>' +
             '<div><strong>Status:</strong> ' + (apiary.status || 'Unknown') + '</div>' +
             '<div><strong>Type:</strong> ' + (apiary.type || 'Unknown') + '</div>' +
@@ -1063,6 +1102,7 @@
         countiesGeoData = countiesGeoJson;
         renderCountyBaseLayer();
         populateOwnerFilter();
+        populateCountyFilter();
         refreshView();
       } catch (error) {
         console.error('Failed to load map data:', error);
@@ -1127,7 +1167,7 @@
       renderFilteredApiaries();
     });
 
-    [searchInput, ownerFilter, statusFilter, bloomFilter, typeFilter, minHivesFilter, treatedFilter, inspectedFilter, miteThresholdFilter, miteBiterFilter].forEach(el => {
+    [searchInput, ownerFilter, statusFilter, countyFilter, bloomFilter, typeFilter, minHivesFilter, treatedFilter, inspectedFilter, miteThresholdFilter, miteBiterFilter].forEach(el => {
       el.addEventListener('input', renderFilteredApiaries);
       el.addEventListener('change', renderFilteredApiaries);
     });
@@ -1136,6 +1176,7 @@
       searchInput.value = '';
       ownerFilter.value = '';
       statusFilter.value = '';
+      countyFilter.value = '';
       bloomFilter.value = '';
       typeFilter.value = '';
       minHivesFilter.value = '';
