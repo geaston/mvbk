@@ -120,18 +120,6 @@
         <div class="small-note">Optional overlay showing the bloom-source polygons used in the scoring.</div>
       </div>
 
-      <div class="control-block">
-        <label for="landcoverZoomThreshold" class="control-label">Land-cover visible at zoom</label>
-        <select id="landcoverZoomThreshold">
-          <option value="10">10+</option>
-          <option value="11">11+</option>
-          <option value="12" selected>12+</option>
-          <option value="13">13+</option>
-          <option value="14">14+</option>
-        </select>
-        <div class="small-note">Bloom polygons only draw when the map is zoomed in to this level or closer.</div>
-      </div>
-
       <div class="legend-box">
         <div class="legend-row"><span class="legend-swatch" style="background:#2e7d32;"></span> High bloom potential</div>
         <div class="legend-row"><span class="legend-swatch" style="background:#f9a825;"></span> Medium bloom potential</div>
@@ -363,7 +351,6 @@
     const showForageRingsCheckbox = document.getElementById('showForageRings');
     const seasonSelect = document.getElementById('seasonSelect');
     const showBloomPolygonsCheckbox = document.getElementById('showBloomPolygons');
-    const landcoverZoomThresholdSelect = document.getElementById('landcoverZoomThreshold');
     const showDcaLayerCheckbox = document.getElementById('showDcaLayer');
     const dcaFilter = document.getElementById('dcaFilter');
     const searchInput = document.getElementById('searchInput');
@@ -388,7 +375,7 @@
     let showDcaLayer = showDcaLayerCheckbox.checked;
     let currentSeason = seasonSelect.value;
     let showBloomPolygons = showBloomPolygonsCheckbox.checked;
-    let landcoverZoomThreshold = Number(landcoverZoomThresholdSelect.value);
+    const landcoverZoomThreshold = 15;
     let showMiteBiterInfluence = showMiteBiterInfluenceCheckbox.checked;
     let miteBiterInfluenceRadiusMeters = Number(miteBiterInfluenceRadiusSelect.value);
     let loadedApiaries = [];
@@ -994,12 +981,6 @@
 
     showBloomPolygonsCheckbox.addEventListener('change', () => {
       showBloomPolygons = showBloomPolygonsCheckbox.checked;
-      renderBloomPolygonLayer();
-      renderFilteredApiaries();
-    });
-
-    landcoverZoomThresholdSelect.addEventListener('change', () => {
-      landcoverZoomThreshold = Number(landcoverZoomThresholdSelect.value);
       renderBloomPolygonLayer();
       renderFilteredApiaries();
     });
