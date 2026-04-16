@@ -794,7 +794,7 @@
             '<div><strong>Honey produced:</strong> ' + ((apiary.honeyProducedLbs == null) ? 'N/A' : apiary.honeyProducedLbs + ' lbs') + '</div>' +
             '<div><strong>Forage radius:</strong> ' + formatRadiusLabel(forageRadiusMeters) + '</div>' +
             '<div><strong>' + currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1) + ' bloom in ring:</strong> ' + bloomSummary.overallLabel + '</div>' +
-            getPopupScorePill(bloomSummary.averageScore) +
+            
             '<div><strong>Overlapping bloom areas:</strong> ' + bloomSummary.overlapCount + '</div>' +
             '<div><strong>Total overlap:</strong> ' + formatAreaLabel(bloomSummary.totalOverlapAreaSqKm) + '</div>' +
             '<div><strong>Nearest candidate DCA:</strong> ' + (nearestDca ? nearestDca.name + ' (' + (nearestDca.distanceMeters / 1000).toFixed(1) + ' km)' : 'None') + '</div>' +
