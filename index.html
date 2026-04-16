@@ -554,12 +554,15 @@
           const seasonName = currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1);
           layer.bindPopup(
             '<div>' +
-              '<div class="apiary-title">' + ((feature.properties.name || feature.properties.forage_type || feature.properties.class_name || feature.properties.landcover || 'Bloom area')) + '</div>' +
+              '<div class="apiary-title">' + (
+                feature.properties.name ||
+                feature.properties.forage_type ||
+                feature.properties.class_name ||
+                feature.properties.landcover ||
+                'Bloom area'
+              ) + '</div>' +
               '<div><strong>Forage type:</strong> ' + rule.label + '</div>' +
               '<div><strong>' + seasonName + ' bloom potential:</strong> ' + scoreToLabel(score) + '</div>' +
-              '<div><strong>Bee score:</strong> ' + ((feature.properties && feature.properties.bee_score != null) ? feature.properties.bee_score : 'N/A') + '</div>' +
-              '<div><strong>Name:</strong> ' + ((feature.properties && feature.properties.name) || 'Unnamed') + '</div>' +
-              '<div><strong>Notes:</strong> ' + ((feature.properties && feature.properties.notes) || 'None') + '</div>' +
             '</div>'
           );
         }
