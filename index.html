@@ -304,7 +304,9 @@
     L.control.layers({ "Street Map": streets, "Satellite": satellite }).addTo(map);
 
     let bloomAreaData = { type: 'FeatureCollection', features: [] };
+    let countiesGeoData = { type: 'FeatureCollection', features: [] };
     const bloomGeoJsonPath = './landcover.geojson';
+    const countiesGeoJsonPath = './new-york-counties.geojson';
 
     const dcaHotspots = [
       { id: 'dca-1', name: 'Esperance Ridge Gap', lat: 42.774, lng: -74.262, confidence: 'high', terrainCue: 'ridge gap / open saddle', notes: 'Open gap between wooded edges with room for drone flight loops.' },
@@ -523,6 +525,27 @@
       return '<div class="popup-score-pill" style="background:' + color + ';">' +
         '<span class="popup-score-dot"></span><span>' + label + ' bloom potential</span>' +
       '</div>';
+    }
+
+    function renderCountyBaseLayer() {
+      if (countyBaseLayer) {
+        map.removeLayer(countyBaseLayer);
+        countyBaseLayer = null;
+      }
+
+      if (!countiesGeoData || !Array.isArray(countiesGeoData.features) || countiesGeoData.features.length === 0) return;
+
+      countyBaseLayer = L.geoJSON(countiesGeoData, {
+        style: feature => ({
+          color: '#5f6368',
+          weight: 1.5,
+          fillColor: '#f5f5f5',
+          fillOpacity: 0.08
+        }),
+        interactive: false
+      }).addTo(map);
+
+      countyBaseLayer.bringToBack();
     }
 
     function clearBloomPolygonLayer() {
@@ -932,29 +955,37 @@
 
     async function loadData() {
       try {
-        const [apiaryResponse, bloomResponse] = await Promise.all([
+        const [apiaryResponse, bloomResponse, countiesResponse] = await Promise.all([
           fetch('./apiaries.json'),
-          fetch(bloomGeoJsonPath)
+          fetch(bloomGeoJsonPath),
+          fetch(countiesGeoJsonPath)
         ]);
 
         if (!apiaryResponse.ok) throw new Error('HTTP ' + apiaryResponse.status + ' while loading apiaries.json');
         if (!bloomResponse.ok) throw new Error('HTTP ' + bloomResponse.status + ' while loading ' + bloomGeoJsonPath);
+        if (!countiesResponse.ok) throw new Error('HTTP ' + countiesResponse.status + ' while loading ' + countiesGeoJsonPath);
 
         const apiaries = await apiaryResponse.json();
         const bloomGeoJson = await bloomResponse.json();
+        const countiesGeoJson = await countiesResponse.json();
 
         if (!Array.isArray(apiaries)) throw new Error('apiaries.json must contain a JSON array.');
         if (!bloomGeoJson || bloomGeoJson.type !== 'FeatureCollection' || !Array.isArray(bloomGeoJson.features)) {
           throw new Error('Bloom GeoJSON must be a FeatureCollection.');
         }
+        if (!countiesGeoJson || countiesGeoJson.type !== 'FeatureCollection' || !Array.isArray(countiesGeoJson.features)) {
+          throw new Error('County GeoJSON must be a FeatureCollection.');
+        }
 
         loadedApiaries = apiaries;
         bloomAreaData = bloomGeoJson;
+        countiesGeoData = countiesGeoJson;
+        renderCountyBaseLayer();
         populateOwnerFilter();
         refreshView();
       } catch (error) {
         console.error('Failed to load map data:', error);
-        showError('Check that apiaries.json and landcover.geojson are in the same folder as index.html.');
+        showError('Check that apiaries.json, landcover.geojson, and new-york-counties.geojson are in the same folder as index.html.');
       }
     }
 
